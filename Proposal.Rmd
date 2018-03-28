@@ -5,3 +5,12 @@ date: "3/29/2018"
 output: github_document
 ---
 
+1. General theme: We want to look at geographic and seasonal patterns in SMS usage. To analyze these we hope to look at user rate in specific locations over time.
+2. Specific questions: 
+    + What does usage of the SMS service look like over time?
+    + Which districts/provinces have the most/least "regular" users? (Where "regular" is defined as long-term use of the system)
+    + What is the churn rate of the SMS project (annual percentage rate at which customers stop using the service)?
+    + Is the increased usage observed during spring related to spring migration? How can we determine by tracking changes in reported area codes by each unique user?
+    + Can we forecast usage for 2018?
+    + What future areas of study would help further/better explain patterns in data usage?
+3. 
