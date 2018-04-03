@@ -5,11 +5,11 @@ date: "2018/4/1"
 output: github_document
 ---
 
-```{r}
+```{r message = F}
 library(readxl)
 library(dplyr)
 ```
-```{r}
+```{r message = F}
 JunSep16 <- read_excel("~/nomadic-herders/LTSdata/2016JunToSep.xls")
 OctNov16 <- read_excel("~/nomadic-herders/LTSdata/2016OctNov.xlsx")
 Apr17 <- read_excel("~/nomadic-herders/LTSdata/2017Apr.xlsx")
@@ -23,39 +23,35 @@ OctDec17 <- read_excel("~/nomadic-herders/LTSdata/2017OctDec.xlsx")
 ```
 
 
-```{r}
+```{r message = F}
 JunSep16 <- JunSep16 %>%
   mutate(Number = as.numeric(substr(Number, 2, 100)))
-JunSep16
 OctNov16 <- OctNov16 %>%
   mutate(Number = as.numeric(Number), Name = as.numeric(Name))
 Jul17 <- Jul17 %>%
   mutate(Name = as.numeric(Name))
 LTS <- bind_rows(Apr17, AugSep17, Dec17, JanMar17, Jul17, Jun17, JunSep16, May17, OctDec17, OctNov16)
 LTS <- select(LTS, Date, Time, Type, Number, Message)
-LTS
 ```
 
-```{r}
+```{r message = F}
 LTS <- LTS %>%
   mutate(Number = ifelse(nchar(as.character(Number)) == 11, Number %% 100000000, Number),
          Number = ifelse(nchar(as.character(Number)) == 10, Number %% 10000000, Number))
-LTS %>%
-  arrange(desc(Number))
 ```
 
-```{r}
+```{r message = F}
 n <- LTS %>%
   distinct(Number)
 nl <- as.vector(n$Number)
 nr <- n %>%
   nrow()
 ```
-```{r}
+```{r message = F}
 set.seed(111)
 id <- floor(runif(nr, min = 10000, max = 99999))
 ```
-```{r}
+```{r message = F}
 identifier <- data.frame(nl, id) %>%
   mutate(Number = nl) %>%
   select(Number, id)
