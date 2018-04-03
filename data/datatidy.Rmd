@@ -1,0 +1,68 @@
+---
+title: "unique_identifier"
+author: "Wenxin Du"
+date: "2018/4/1"
+output: github_document
+---
+
+```{r}
+library(readxl)
+library(dplyr)
+```
+```{r}
+JunSep16 <- read_excel("~/nomadic-herders/LTSdata/2016JunToSep.xls")
+OctNov16 <- read_excel("~/nomadic-herders/LTSdata/2016OctNov.xlsx")
+Apr17 <- read_excel("~/nomadic-herders/LTSdata/2017Apr.xlsx")
+AugSep17 <- read_excel("~/nomadic-herders/LTSdata/2017AugSep.xlsx")
+Dec17 <- read_excel("~/nomadic-herders/LTSdata/2017Dec.xlsx")
+JanMar17 <- read_excel("~/nomadic-herders/LTSdata/2017JanToMar.xlsx")
+Jul17 <- read_excel("~/nomadic-herders/LTSdata/2017Jul.xlsx")
+Jun17 <-read_excel("~/nomadic-herders/LTSdata/2017Jun.xlsx")
+May17 <- read_excel("~/nomadic-herders/LTSdata/2017May.xlsx")
+OctDec17 <- read_excel("~/nomadic-herders/LTSdata/2017OctDec.xlsx")
+```
+
+
+```{r}
+JunSep16 <- JunSep16 %>%
+  mutate(Number = as.numeric(substr(Number, 2, 100)))
+JunSep16
+OctNov16 <- OctNov16 %>%
+  mutate(Number = as.numeric(Number), Name = as.numeric(Name))
+Jul17 <- Jul17 %>%
+  mutate(Name = as.numeric(Name))
+LTS <- bind_rows(Apr17, AugSep17, Dec17, JanMar17, Jul17, Jun17, JunSep16, May17, OctDec17, OctNov16)
+LTS <- select(LTS, Date, Time, Type, Number, Message)
+LTS
+```
+
+```{r}
+LTS <- LTS %>%
+  mutate(Number = ifelse(nchar(as.character(Number)) == 11, Number %% 100000000, Number),
+         Number = ifelse(nchar(as.character(Number)) == 10, Number %% 10000000, Number))
+LTS %>%
+  arrange(desc(Number))
+```
+
+```{r}
+n <- LTS %>%
+  distinct(Number)
+nl <- as.vector(n$Number)
+nr <- n %>%
+  nrow()
+```
+```{r}
+set.seed(111)
+id <- floor(runif(nr, min = 10000, max = 99999))
+```
+```{r}
+identifier <- data.frame(nl, id) %>%
+  mutate(Number = nl) %>%
+  select(Number, id)
+identifier
+```
+```{r}
+LTS_unique_ident <- full_join(LTS, identifier) %>%
+  select(id, Date, Time, Type, Message) 
+LTS_unique_ident
+```
