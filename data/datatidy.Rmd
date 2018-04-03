@@ -59,7 +59,6 @@ id <- floor(runif(nr, min = 10000, max = 99999))
 identifier <- data.frame(nl, id) %>%
   mutate(Number = nl) %>%
   select(Number, id)
-identifier
 ```
 ```{r}
 LTS_unique_ident <- full_join(LTS, identifier) %>%
