@@ -10,6 +10,7 @@ library(readxl)
 library(dplyr)
 ```
 ```{r message = F}
+
 JunSep16 <- read_excel("~/nomadic-herders/LTSdata/2016JunToSep.xls")
 OctNov16 <- read_excel("~/nomadic-herders/LTSdata/2016OctNov.xlsx")
 Apr17 <- read_excel("~/nomadic-herders/LTSdata/2017Apr.xlsx")
