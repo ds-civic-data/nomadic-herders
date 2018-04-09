@@ -4,7 +4,9 @@ author: "Wenxin Du"
 date: "2018/4/1"
 output: github_document
 ---
-
+```{r}
+library(lubridate)
+```
 ```{r message = F}
 library(readxl)
 library(dplyr)
@@ -50,15 +52,22 @@ nr <- n %>%
 ```
 ```{r message = F}
 set.seed(111)
-id <- floor(runif(nr, min = 10000, max = 99999))
+id_ <- sample(10000:99999, nr, replace=FALSE)
+id <- floor(runif(nr, min = 10000, max = 99999)) ###wrong code, not truly distinct numbers generated
 ```
 ```{r message = F}
-identifier <- data.frame(nl, id) %>%
-  mutate(Number = nl) %>%
+identifier <- data.frame(nl, id_) %>%
+  mutate(Number = nl, id = id_) %>%
   select(Number, id)
 ```
 ```{r}
-LTS_unique_ident <- full_join(LTS, identifier) %>%
+LTS_unique_ident <- left_join(LTS, identifier) %>%
   select(id, Date, Time, Type, Message) 
 LTS_unique_ident
 ```
+
+```{r}
+write.csv(LTS_unique_ident, file = "LTS_deidentified.csv")
+```
+
+
