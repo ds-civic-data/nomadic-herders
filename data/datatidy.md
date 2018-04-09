@@ -4,6 +4,17 @@ Wenxin Du
 2018/4/1
 
 ``` r
+library(lubridate)
+```
+
+    ## 
+    ## Attaching package: 'lubridate'
+
+    ## The following object is masked from 'package:base':
+    ## 
+    ##     date
+
+``` r
 library(readxl)
 library(dplyr)
 ```
@@ -63,17 +74,18 @@ nr <- n %>%
 
 ``` r
 set.seed(111)
-id <- floor(runif(nr, min = 10000, max = 99999))
+id_ <- sample(10000:99999, nr, replace=FALSE)
+id <- floor(runif(nr, min = 10000, max = 99999)) ###wrong code, not truly distinct numbers generated
 ```
 
 ``` r
-identifier <- data.frame(nl, id) %>%
-  mutate(Number = nl) %>%
+identifier <- data.frame(nl, id_) %>%
+  mutate(Number = nl, id = id_) %>%
   select(Number, id)
 ```
 
 ``` r
-LTS_unique_ident <- full_join(LTS, identifier) %>%
+LTS_unique_ident <- left_join(LTS, identifier) %>%
   select(id, Date, Time, Type, Message) 
 ```
 
@@ -85,15 +97,19 @@ LTS_unique_ident
 
     ## # A tibble: 107,213 x 5
     ##       id Date                Time                Type  Message         
-    ##    <dbl> <dttm>              <dttm>              <chr> <chr>           
-    ##  1 63367 2017-04-01 00:00:00 1899-12-31 00:00:49 in    83183   2       
-    ##  2 63367 2017-04-01 00:00:00 1899-12-31 00:01:33 out   4sar4: tsastai  
+    ##    <int> <dttm>              <dttm>              <chr> <chr>           
+    ##  1 63368 2017-04-01 00:00:00 1899-12-31 00:00:49 in    83183   2       
+    ##  2 63368 2017-04-01 00:00:00 1899-12-31 00:01:33 out   4sar4: tsastai  
     ##  3 75382 2017-04-01 00:00:00 1899-12-31 02:52:27 out   3sar31: uulerheg
     ##  4 75382 2017-04-01 00:00:00 1899-12-31 02:53:04 out   3sar31: uulerheg
     ##  5 75382 2017-04-01 00:00:00 1899-12-31 02:53:05 out   3sar31: uulerheg
     ##  6 43337 2017-04-01 00:00:00 1899-12-31 06:31:14 in    23177 1         
     ##  7 43337 2017-04-01 00:00:00 1899-12-31 06:31:30 in    23177 2         
-    ##  8 56342 2017-04-01 00:00:00 1899-12-31 06:31:44 in    23281           
+    ##  8 56341 2017-04-01 00:00:00 1899-12-31 06:31:44 in    23281           
     ##  9 43337 2017-04-01 00:00:00 1899-12-31 06:31:50 out   4sar1: uulerheg 
     ## 10 43337 2017-04-01 00:00:00 1899-12-31 06:31:55 out   4sar4: uulerheg 
     ## # ... with 107,203 more rows
+
+``` r
+write.csv(LTS_unique_ident, file = "LTS_deidentified.csv")
+```
