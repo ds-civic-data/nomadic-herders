@@ -1,0 +1,43 @@
+---
+title: "Data Exploration"
+author: "Giovanni Corti"
+date: "4/5/2018"
+output: github_document
+---
+
+```{r setup}
+library(ggplot2)
+library(lubridate)
+library(tidyverse)
+library(ggmap)
+library(reshape)
+df1<-read.csv("data/LTS_deidentified.csv",stringsAsFactors=FALSE)
+
+zipdata<-read.csv("data/Zip_Coords.csv", header=FALSE, col.names=c("Name", "Zip", "Lat","Long", "Pasture"), colClasses = c("character", "integer", "numeric", "numeric", "character"))
+
+mutate(df1, month=month(Date)) %>%
+  ggplot(aes(x=month))+geom_bar()
+
+mutate(df1, month=month(Date)) %>%
+  group_by(id) %>%
+  summarize(mindate=min(Date), maxdate=max(Date)) %>%
+  group_by(maxdate) %>%
+  summarize(maxcount=n()) %>%
+  ggplot(aes(x=maxcount))+geom_bar(binwidth = 30)
+
+
+strsplit(df1$Message[[3]], " ")[[1]][[1]]
+
+df2<-filter(df1, Type=="in") %>%
+  mutate(Zip=as.numeric(substr(Message,0,5))) %>%
+  inner_join(zipdata, by=c("Zip"="Zip")) %>%
+  mutate(Pasture=ifelse(Pasture=="pasture",TRUE, FALSE)) %>%
+  group_by(Zip) %>%
+  summarize(count=n(), lat=mean(Lat), long=mean(Long))
+
+m <- get_map("Mongolia", zoom = 4, maptype = "hybrid")
+
+ggmap(m) +
+  geom_point(data = df2, aes(x = long, y = lat, size=count, alpha=.05))+ guides(alpha=FALSE)
+
+```
