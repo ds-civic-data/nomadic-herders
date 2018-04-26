@@ -15,6 +15,7 @@ library(dplyr)
 
 JunSep16 <- read_excel("~/nomadic-herders/LTSdata/2016JunToSep.xls")
 OctNov16 <- read_excel("~/nomadic-herders/LTSdata/2016OctNov.xlsx")
+Dec16 <- read_excel("~/nomadic-herders/LTSdata/2016Dec.xlsx")
 Apr17 <- read_excel("~/nomadic-herders/LTSdata/2017Apr.xlsx")
 AugSep17 <- read_excel("~/nomadic-herders/LTSdata/2017AugSep.xlsx")
 Dec17 <- read_excel("~/nomadic-herders/LTSdata/2017Dec.xlsx")
@@ -33,7 +34,7 @@ OctNov16 <- OctNov16 %>%
   mutate(Number = as.numeric(Number), Name = as.numeric(Name))
 Jul17 <- Jul17 %>%
   mutate(Name = as.numeric(Name))
-LTS <- bind_rows(Apr17, AugSep17, Dec17, JanMar17, Jul17, Jun17, JunSep16, May17, OctDec17, OctNov16)
+LTS <- bind_rows(Apr17, AugSep17, Dec17, JanMar17, Jul17, Jun17, JunSep16, May17, OctDec17, OctNov16, Dec16)
 LTS <- select(LTS, Date, Time, Type, Number, Message)
 ```
 
