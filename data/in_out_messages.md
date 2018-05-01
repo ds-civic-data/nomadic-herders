@@ -32,7 +32,7 @@ correct_exp <- "(^[0-9]{5}\\s{1,}[0-9]{1}$)"
 In$correct <- if_else(grepl(correct_exp,In$Message),'correct','incorrect')
 
 In <- In %>%
-  mutate(correct = ifelse(nchar(Message) > 7, 'incorrect', 'correct'))
+  mutate(correct = ifelse(nchar(Message) > 7, 'incorrect', correct))
 # create area column for correct/incorrect
 In <- In %>%
   mutate(area = str_extract(In$Message, "[0-9]{5}")) 
@@ -52,12 +52,7 @@ write.csv(In, file = "In.csv")
 Correct <- In %>%
   filter(correct == "correct") %>%
   separate(Message, c("area", "request"), sep = ("(\\s{1,4}|\\.)"), extra = "drop")
-```
 
-    ## Warning: Too few values at 3782 locations: 3, 4, 39, 47, 55, 68, 69, 76,
-    ## 77, 106, 107, 127, 133, 136, 215, 237, 282, 286, 287, 318, ...
-
-``` r
 write.csv(Correct, file = "Correct.csv")
 ```
 
