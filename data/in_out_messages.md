@@ -25,15 +25,26 @@ In <- LTS_data %>%
   filter(Type == "in")
 
 # regexpression to pull out messages in correct/incorrect format
-correct_exp <- "(^[0-9]{5}\\s{1,}[0-9]{1})"
+correct_exp <- "(^[0-9]{5}\\s{1,}[0-9]{1}$)"
 
 
 # create correct/incorrect column
 In$correct <- if_else(grepl(correct_exp,In$Message),'correct','incorrect')
 
+In <- In %>%
+  mutate(correct = ifelse(nchar(Message) > 7, 'incorrect', 'correct'))
 # create area column for correct/incorrect
 In <- In %>%
   mutate(area = str_extract(In$Message, "[0-9]{5}")) 
+
+# Is the area code correct?
+
+zip_data <- read_excel("~/nomadic-herders/LTSdata/Zip_extension_2016_2017.xlsx")
+
+area_vector <- as.vector(zip_data$`Regional code`)
+
+In <- In %>%
+  mutate(area_correct = if_else(In$area %in% area_vector, 'real', 'fake'))
 
 write.csv(In, file = "In.csv")
 
@@ -41,7 +52,12 @@ write.csv(In, file = "In.csv")
 Correct <- In %>%
   filter(correct == "correct") %>%
   separate(Message, c("area", "request"), sep = ("(\\s{1,4}|\\.)"), extra = "drop")
+```
 
+    ## Warning: Too few values at 3782 locations: 3, 4, 39, 47, 55, 68, 69, 76,
+    ## 77, 106, 107, 127, 133, 136, 215, 237, 282, 286, 287, 318, ...
+
+``` r
 write.csv(Correct, file = "Correct.csv")
 ```
 
