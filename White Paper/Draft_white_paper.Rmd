@@ -1,0 +1,25 @@
+---
+title: "White paper draft"
+author: "Gio, Wenxin, Ilana"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Profile of a Regular User
+
+* How often do people use the service?
+* How many areas do they tend to ask about?
+* What areas are people most interested in?
+
+# Churn rate
+
+## December churn rate?
+
+# Service errors
+
+# User errors
+
+# Mapping usage
