@@ -22,6 +22,7 @@ library(dplyr)
 ``` r
 JunSep16 <- read_excel("~/nomadic-herders/LTSdata/2016JunToSep.xls")
 OctNov16 <- read_excel("~/nomadic-herders/LTSdata/2016OctNov.xlsx")
+Dec16 <- read_excel("~/nomadic-herders/LTSdata/2016Dec.xlsx")
 Apr17 <- read_excel("~/nomadic-herders/LTSdata/2017Apr.xlsx")
 AugSep17 <- read_excel("~/nomadic-herders/LTSdata/2017AugSep.xlsx")
 Dec17 <- read_excel("~/nomadic-herders/LTSdata/2017Dec.xlsx")
@@ -54,7 +55,7 @@ Jul17 <- Jul17 %>%
     ## coercion
 
 ``` r
-LTS <- bind_rows(Apr17, AugSep17, Dec17, JanMar17, Jul17, Jun17, JunSep16, May17, OctDec17, OctNov16)
+LTS <- bind_rows(Apr17, AugSep17, Dec17, JanMar17, Jul17, Jun17, JunSep16, May17, OctDec17, OctNov16, Dec16)
 LTS <- select(LTS, Date, Time, Type, Number, Message)
 ```
 
@@ -95,7 +96,7 @@ LTS_unique_ident <- left_join(LTS, identifier) %>%
 LTS_unique_ident
 ```
 
-    ## # A tibble: 107,213 x 5
+    ## # A tibble: 125,409 x 5
     ##       id Date                Time                Type  Message         
     ##    <int> <dttm>              <dttm>              <chr> <chr>           
     ##  1 63368 2017-04-01 00:00:00 1899-12-31 00:00:49 in    83183   2       
@@ -108,7 +109,7 @@ LTS_unique_ident
     ##  8 56341 2017-04-01 00:00:00 1899-12-31 06:31:44 in    23281           
     ##  9 43337 2017-04-01 00:00:00 1899-12-31 06:31:50 out   4sar1: uulerheg 
     ## 10 43337 2017-04-01 00:00:00 1899-12-31 06:31:55 out   4sar4: uulerheg 
-    ## # ... with 107,203 more rows
+    ## # ... with 125,399 more rows
 
 ``` r
 write.csv(LTS_unique_ident, file = "LTS_deidentified.csv")

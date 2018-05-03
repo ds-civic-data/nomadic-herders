@@ -1,0 +1,48 @@
+---
+title: "Churn Rate"
+name: "Ilana Heaton"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lubridate)
+```
+
+# What's the system's churn rate?
+```{r}
+In <- read_csv("~/nomadic-herders/LTSdata/In.csv") 
+In <- In %>%
+  select(-X1)
+
+last_use <- In %>% 
+  mutate(month = month(Date), year = year(Date)) %>%
+  group_by(id) %>%
+  arrange(month, year) %>%
+  slice(n()) %>%
+  ungroup() %>%
+  group_by(month, year) %>%
+  summarise(n = n()) %>%
+  arrange(year)
+
+
+total_use <- In %>%
+  mutate(month = month(Date), year = year(Date)) %>%
+  group_by(month, year) %>%
+  distinct(id, .keep_all = TRUE) %>%
+  summarise(total = n()) %>%
+  arrange(year)
+
+left_join(last_use, total_use, by = c("year" = "year", "month" = "month")) %>%
+  mutate(churn = n/total)
+
+left_join(last_use, total_use, by = c("year" = "year", "month" = "month")) %>%
+  mutate(churn = n/total) %>%
+  ungroup() %>%
+  filter(!row_number() == n()) %>%
+  mutate(date = make_date(year = year, month = month)) %>%
+ggplot(aes(x = date, y = churn)) + geom_col() + labs(title = "Monthly Churn Rate June 2016- November 2017", y = "Rate", x = "month") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(),  axis.line = element_line(colour = "black")) 
+  
+
+```
