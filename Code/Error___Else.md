@@ -1,0 +1,357 @@
+Error & Else
+================
+Wenxin Du
+5/3/2018
+
+``` r
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+library(readr)
+library(readxl)
+```
+
+``` r
+JunSep16 <- read_excel("~/nomadic-herders/LTSdata/2016JunToSep.xls")
+OctNov16 <- read_excel("~/nomadic-herders/LTSdata/2016OctNov.xlsx")
+Apr17 <- read_excel("~/nomadic-herders/LTSdata/2017Apr.xlsx")
+AugSep17 <- read_excel("~/nomadic-herders/LTSdata/2017AugSep.xlsx")
+Dec17 <- read_excel("~/nomadic-herders/LTSdata/2017Dec.xlsx")
+JanMar17 <- read_excel("~/nomadic-herders/LTSdata/2017JanToMar.xlsx")
+Jul17 <- read_excel("~/nomadic-herders/LTSdata/2017Jul.xlsx")
+Jun17 <-read_excel("~/nomadic-herders/LTSdata/2017Jun.xlsx")
+May17 <- read_excel("~/nomadic-herders/LTSdata/2017May.xlsx")
+OctDec17 <- read_excel("~/nomadic-herders/LTSdata/2017OctDec.xlsx")
+X2016_Dec <- read_excel("~/nomadic-herders/LTSdata/2016 Dec.xlsx")
+```
+
+``` r
+JunSep16 <- JunSep16 %>%
+  mutate(Number = as.numeric(substr(Number, 2, 100)))
+OctNov16 <- OctNov16 %>%
+  mutate(Number = as.numeric(Number), Name = as.numeric(Name))
+Jul17 <- Jul17 %>%
+  mutate(Name = as.numeric(Name))
+LTS <- bind_rows(Apr17, AugSep17, Dec17, JanMar17, Jul17, Jun17, JunSep16, May17, OctDec17, OctNov16, X2016_Dec)
+LTS <- select(LTS, Date, Time, Type, Number, Message)
+```
+
+``` r
+LTS <- LTS %>%
+  mutate(Number = ifelse(nchar(as.character(Number)) == 11, Number %% 100000000, Number),
+         Number = ifelse(nchar(as.character(Number)) == 10, Number %% 10000000, Number))
+```
+
+``` r
+n <- LTS %>%
+  distinct(Number)
+nl <- as.vector(n$Number)
+nr <- n %>%
+  nrow()
+```
+
+``` r
+set.seed(111)
+id_ <- sample(10000:99999, nr, replace=FALSE)
+id <- floor(runif(nr, min = 10000, max = 99999)) ###wrong code, not truly distinct numbers generated
+```
+
+``` r
+identifier <- data.frame(nl, id_) %>%
+  mutate(Number = nl, id = id_) %>%
+  select(Number, id)
+```
+
+``` r
+LTS_deidentified_1_ <- read_csv("~/nomadic-herders/data/LTS_deidentified (1).csv")
+In_4_ <- read_csv("~/nomadic-herders/LTSdata/In (4).csv")
+LTS_yearmonth <-  LTS_deidentified_1_ %>%
+  mutate(Date = ymd(Date)) %>%
+  mutate(Year = year(Date), month = month(Date)) %>%
+  mutate(month = ifelse(nchar(as.character(month)) == 1, paste("0", sep = "", as.character(month)), as.character(month))) %>%
+  mutate(year_month = paste(as.character(Year), "-", month)) 
+```
+
+### Distribution of Unique Users over Time
+
+``` r
+LTS_yearmonth %>%
+  group_by(year_month) %>%
+  distinct(id) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n)) %>%
+  ggplot(aes(x = year_month, y = n)) +
+  geom_col() +
+  theme(axis.text.x = element_text(angle = 40, hjust = 1)) +
+  ggtitle("Number of Unique Users over Time") +
+  xlab("Year-Month") +
+  ylab("Number of Unique users")
+```
+
+![](Error___Else_files/figure-markdown_github/unnamed-chunk-9-1.png)
+
+### Distribution of Odd Telephone Numbers Over Time
+
+#### Odd telephone numbers: phone numbers less than 8 digits
+
+``` r
+odd_phone_numbers <- left_join(LTS, identifier) %>%
+  filter(nchar(as.character(Number)) != 8) %>%
+  distinct(id) %>%
+  mutate(is_odd = TRUE)
+a <- full_join(LTS_yearmonth, odd_phone_numbers) %>%
+  mutate(is_odd = ifelse(!is.na(is_odd), TRUE, FALSE))
+a %>%
+  group_by(year_month, is_odd) %>%
+  distinct(id) %>%
+  summarize(n = n()) %>%
+  ggplot(aes(x = year_month, y = n, fill = is_odd)) + 
+  geom_col()
+```
+
+![](Error___Else_files/figure-markdown_github/unnamed-chunk-10-1.png)
+
+``` r
+a %>% 
+  group_by(year_month, is_odd) %>%
+  distinct(id) %>%
+  summarize(n = n()) %>%
+  mutate(prop = n/sum(n)) %>%
+  ggplot(aes(x = year_month, y = prop, fill = is_odd)) + 
+  geom_col()+
+  theme(axis.text.x = element_text(angle = 40, hjust = 1)) +
+  scale_fill_manual(values = c("white", "gray"))+
+  theme(axis.text.x = element_text(angle = 40, hjust = 1))
+```
+
+![](Error___Else_files/figure-markdown_github/unnamed-chunk-10-2.png)
+
+### Create a list of IDs who sent in requests but never hear back from the system
+
+``` r
+never_hear_back <- LTS_yearmonth %>%
+  group_by(id, Type) %>%
+  summarize(n = n()) %>%
+  spread(key = Type, value = n) %>%
+  filter(is.na(out)) %>%
+  arrange(desc(`in`)) 
+nhb <- as.vector(never_hear_back$id)
+```
+
+``` r
+In <- In_4_ %>%
+  mutate(date = ymd(Date)) %>%
+  select(-Date) %>%
+  rename(Date = date)
+```
+
+### Distribution of messages sent in messages with correct area code but never hear back over time
+
+``` r
+bb <- In %>%
+  mutate(Date = ymd(Date)) %>%
+  mutate(Year = year(Date), month = month(Date)) %>%
+  mutate(month = ifelse(nchar(as.character(month)) == 1, paste("0", sep = "", as.character(month)), as.character(month))) %>%
+  mutate(year_month = paste(as.character(Year), "-", month)) 
+```
+
+``` r
+pattern <- "^[0-9]{5}\\s+[0-9]{1}$"
+bb <- bb %>%
+  mutate(correct = grepl(pattern, Message)) %>%
+  filter(correct == TRUE)
+```
+
+``` r
+bb %>%
+  group_by(year_month) %>%
+  filter(id %in% nhb) %>%
+  filter(area_correct == "real") %>%
+  group_by(area_correct, year_month) %>%
+  summarize(n = n()) %>%
+  ggplot(aes(x = year_month, y = n)) + 
+  geom_col(position = "dodge") +
+  theme(axis.text.x = element_text(angle = 40, hjust = 1))
+```
+
+![](Error___Else_files/figure-markdown_github/unnamed-chunk-15-1.png)
+
+### Distribution of messages with area code not existing
+
+``` r
+bb %>%
+  group_by(year_month) %>%
+  filter(area_correct == "fake") %>%
+  group_by(area_correct, year_month) %>%
+  summarize(n = n()) %>%
+  ggplot(aes(x = year_month, y = n)) + 
+  geom_col(position = "dodge") +
+  theme(axis.text.x = element_text(angle = 40, hjust = 1))
+```
+
+![](Error___Else_files/figure-markdown_github/unnamed-chunk-16-1.png)
+
+### Distribution of messages with area code not existing from users who never hear back
+
+``` r
+bb %>%
+  group_by(year_month) %>%
+  filter(id %in% nhb) %>%
+  filter(area_correct == "fake") %>%
+  group_by(area_correct, year_month) %>%
+  summarize(n = n()) %>%
+  ggplot(aes(x = year_month, y = n)) + 
+  geom_col(position = "dodge") +
+  theme(axis.text.x = element_text(angle = 40, hjust = 1))
+```
+
+![](Error___Else_files/figure-markdown_github/unnamed-chunk-17-1.png)
+
+### Distribution of messages from those who never hear back
+
+``` r
+bb %>%
+  group_by(year_month) %>%
+  filter(id %in% nhb) %>%
+  filter(correct == TRUE) %>%
+  group_by(area_correct, year_month) %>%
+  summarize(n = n()) %>%
+  ggplot(aes(x = year_month, y = n, fill = area_correct)) + 
+  geom_col(position = "dodge") +
+  theme(axis.text.x = element_text(angle = 40, hjust = 1))
+```
+
+![](Error___Else_files/figure-markdown_github/unnamed-chunk-18-1.png)
+
+### Distribution of number of requests for top 6 most popular area codes
+
+``` r
+area <- bb %>%
+  filter(area_correct == "real", !is.na(area)) %>%
+  group_by(area) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n)) %>%
+  head(6)
+area
+```
+
+    ## # A tibble: 6 x 2
+    ##    area     n
+    ##   <int> <int>
+    ## 1 62267  1094
+    ## 2 84217   965
+    ## 3 46135   817
+    ## 4 67179   673
+    ## 5 23177   601
+    ## 6 62211   499
+
+``` r
+qwq <- as.vector(area$area)
+qqq <- bb %>%
+  mutate(area = as.character(area)) %>%
+  group_by(area, area_correct, year_month) %>%
+  filter(area %in% qwq) %>%
+  filter(area_correct == "real") %>%
+  summarize(n = n()) %>%
+  arrange(desc(n))
+```
+
+``` r
+qqq$code = factor(qqq$area, levels = c(62267, 84217, 46135, 67179, 23177, 62110))
+qqq%>%
+  ggplot(aes(x = year_month, y = n)) + geom_col(position = "dodge") +
+  facet_wrap(~code, ncol = 2) +
+  theme(axis.text.x = element_text(angle = 70, hjust = 1))+ 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+    panel.background = element_blank(), axis.line = element_blank())
+```
+
+![](Error___Else_files/figure-markdown_github/unnamed-chunk-21-1.png)
+
+### Distribution of New Users
+
+``` r
+new_users <- bb %>%
+  group_by(id) %>%
+  summarize(min = min(Date)) %>%
+  mutate(Year = year(min), month = month(min)) %>%
+  mutate(month = ifelse(nchar(as.character(month)) == 1, paste("0", sep = "", as.character(month)), as.character(month))) %>%
+  mutate(year_month = paste(as.character(Year), "-", month))%>%
+  group_by(year_month) %>%
+  summarize(n = n()) 
+new_users %>%
+  ggplot(aes(x = year_month, y = n)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 40, hjust = 1))
+```
+
+![](Error___Else_files/figure-markdown_github/unnamed-chunk-22-1.png)
+
+### Distribution of proportion of new users each month
+
+``` r
+bb %>%
+  group_by(year_month) %>%
+  distinct(id) %>%
+  summarize(nid = n()) %>%
+  full_join(new_users, by = "year_month") %>%
+  mutate(prop = n/nid) %>%
+  ggplot(aes(x = year_month, y = prop)) + geom_col() + theme(axis.text.x = element_text(angle = 40, hjust = 1))
+```
+
+![](Error___Else_files/figure-markdown_github/unnamed-chunk-23-1.png)
+
+### Distribution of Those occured only once
+
+``` r
+c <- LTS_yearmonth %>%
+  group_by(id) %>%
+  summarize(n = n()) %>%
+  filter(n == 1) 
+d <- as.vector(c$id)
+LTS_yearmonth %>%
+  mutate(only_once = ifelse(id %in% d, TRUE, FALSE))%>%
+  mutate(out_only_once = ifelse(only_once == TRUE & Type == "out", TRUE, FALSE)) %>%
+  group_by(year_month, only_once) %>%
+  distinct(id) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n)) %>%
+  ggplot(aes(x = year_month, y = n, fill = only_once)) +
+  geom_col() +
+  theme(axis.text.x = element_text(angle = 40, hjust = 1))
+```
+
+![](Error___Else_files/figure-markdown_github/unnamed-chunk-24-1.png)
+
+``` r
+LTS_yearmonth %>%
+  mutate(only_once = ifelse(id %in% d, TRUE, FALSE))%>%
+  mutate(out_only_once = ifelse(only_once == TRUE & Type == "out", TRUE, FALSE)) %>%
+  group_by(year_month, only_once) %>%
+  distinct(id) %>%
+  summarize(n = n()) %>%
+  group_by(year_month) %>%
+  mutate(prop = n/sum(n)) %>%
+  ggplot(aes(x = year_month, y = prop, fill = only_once)) +
+  geom_col() +
+  theme(axis.text.x = element_text(angle = 40, hjust = 1)) 
+```
+
+![](Error___Else_files/figure-markdown_github/unnamed-chunk-25-1.png)
+
+``` r
+LTS_yearmonth %>%
+  mutate(only_once = ifelse(id %in% d, TRUE, FALSE))%>%
+  mutate(out_in = ifelse(only_once == TRUE & Type == "out", "ONCE OUT", ifelse(only_once == TRUE & Type == "in", "ONCE IN", "MORE THAN ONCE"))) %>%
+  group_by(year_month, out_in) %>%
+  distinct(id) %>%
+  summarize(n = n()) %>%
+  group_by(year_month) %>%
+  mutate(prop = n/sum(n)) %>%
+  ggplot(aes(x = year_month, y = prop, fill = out_in)) +
+  geom_col() +
+  theme(axis.text.x = element_text(angle = 40, hjust = 1)) +
+  scale_fill_manual(values=c("mistyrose2", "lightskyblue", "lightcoral"))
+```
+
+![](Error___Else_files/figure-markdown_github/unnamed-chunk-26-1.png)
