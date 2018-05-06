@@ -107,7 +107,8 @@ a %>%
   distinct(id) %>%
   summarize(n = n()) %>%
   ggplot(aes(x = year_month, y = n, fill = is_odd)) + 
-  geom_col()
+  geom_col()+
+  theme(axis.text.x = element_text(angle = 40, hjust = 1))
 ```
 
 ![](Error___Else_files/figure-markdown_github/unnamed-chunk-10-1.png)
@@ -121,8 +122,7 @@ a %>%
   ggplot(aes(x = year_month, y = prop, fill = is_odd)) + 
   geom_col()+
   theme(axis.text.x = element_text(angle = 40, hjust = 1)) +
-  scale_fill_manual(values = c("white", "gray"))+
-  theme(axis.text.x = element_text(angle = 40, hjust = 1))
+  scale_fill_manual(values = c("white", "gray"))
 ```
 
 ![](Error___Else_files/figure-markdown_github/unnamed-chunk-10-2.png)
@@ -146,7 +146,7 @@ In <- In_4_ %>%
   rename(Date = date)
 ```
 
-### Distribution of messages sent in messages with correct area code but never hear back over time
+### Distribution of messages sent in messages with correct area code and correct format but never hear back over time
 
 ``` r
 bb <- In %>%
@@ -159,14 +159,23 @@ bb <- In %>%
 ``` r
 pattern <- "^[0-9]{5}\\s+[0-9]{1}$"
 bb <- bb %>%
-  mutate(correct = grepl(pattern, Message)) %>%
-  filter(correct == TRUE)
+  mutate(correct = grepl(pattern, Message))
+bb %>%
+  group_by(correct) %>%
+  summarize(n = n())
 ```
+
+    ## # A tibble: 2 x 2
+    ##   correct     n
+    ##   <lgl>   <int>
+    ## 1 F        9162
+    ## 2 T       52454
 
 ``` r
 bb %>%
   group_by(year_month) %>%
   filter(id %in% nhb) %>%
+  filter(correct == TRUE) %>%
   filter(area_correct == "real") %>%
   group_by(area_correct, year_month) %>%
   summarize(n = n()) %>%
@@ -239,12 +248,12 @@ area
     ## # A tibble: 6 x 2
     ##    area     n
     ##   <int> <int>
-    ## 1 62267  1094
-    ## 2 84217   965
-    ## 3 46135   817
-    ## 4 67179   673
-    ## 5 23177   601
-    ## 6 62211   499
+    ## 1 62267  1149
+    ## 2 84217  1014
+    ## 3 46135   877
+    ## 4 67179   770
+    ## 5 23177   646
+    ## 6 62110   547
 
 ``` r
 qwq <- as.vector(area$area)
@@ -301,6 +310,38 @@ bb %>%
 
 ![](Error___Else_files/figure-markdown_github/unnamed-chunk-23-1.png)
 
+### Distribution of new users each month (includes whether they dropped within the same month)
+
+``` r
+gg <- bb %>%
+  group_by(id) %>%
+  summarize(min = min(Date), max = max(Date)) %>%
+  mutate(Yearmin = year(min), monthmin = month(min), Yearmax = year(max), monthmax = month(max)) %>%
+  mutate(monthmin = ifelse(nchar(as.character(monthmin)) == 1, paste("0", sep = "", as.character(monthmin)), as.character(monthmin))) %>%
+  mutate(monthmax = ifelse(nchar(as.character(monthmax)) == 1, paste("0", sep = "", as.character(monthmax)), as.character(monthmax))) %>%
+  mutate(year_month_min = paste(as.character(Yearmin), "-", monthmin))%>%
+  mutate(year_month_max = paste(as.character(Yearmax), "-", monthmax))%>%
+  mutate(drop_same_month = year_month_min == year_month_max) %>%
+  group_by(year_month_min, drop_same_month) %>%
+  summarize(n = n()) 
+gg %>%
+  ggplot(aes(x = year_month_min, y = n, fill = drop_same_month)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 40, hjust = 1))
+```
+
+![](Error___Else_files/figure-markdown_github/unnamed-chunk-24-1.png)
+
+``` r
+gg %>%
+  filter(year_month_min != "2017 - 12") %>%
+  group_by(year_month_min) %>%
+  mutate(prop = n/sum(n)) %>%
+  ggplot(aes(x = year_month_min, y = prop, fill = drop_same_month))+geom_col()+
+  theme(axis.text.x = element_text(angle = 40, hjust = 1))
+```
+
+![](Error___Else_files/figure-markdown_github/unnamed-chunk-25-1.png)
+
 ### Distribution of Those occured only once
 
 ``` r
@@ -321,7 +362,7 @@ LTS_yearmonth %>%
   theme(axis.text.x = element_text(angle = 40, hjust = 1))
 ```
 
-![](Error___Else_files/figure-markdown_github/unnamed-chunk-24-1.png)
+![](Error___Else_files/figure-markdown_github/unnamed-chunk-26-1.png)
 
 ``` r
 LTS_yearmonth %>%
@@ -337,7 +378,7 @@ LTS_yearmonth %>%
   theme(axis.text.x = element_text(angle = 40, hjust = 1)) 
 ```
 
-![](Error___Else_files/figure-markdown_github/unnamed-chunk-25-1.png)
+![](Error___Else_files/figure-markdown_github/unnamed-chunk-27-1.png)
 
 ``` r
 LTS_yearmonth %>%
@@ -354,4 +395,4 @@ LTS_yearmonth %>%
   scale_fill_manual(values=c("mistyrose2", "lightskyblue", "lightcoral"))
 ```
 
-![](Error___Else_files/figure-markdown_github/unnamed-chunk-26-1.png)
+![](Error___Else_files/figure-markdown_github/unnamed-chunk-28-1.png)

@@ -7,7 +7,7 @@ output: github_document
 ```{r global_options, include=FALSE}
 knitr::opts_chunk$set(warning=FALSE, message=FALSE)
 ```
-```{r message = F}
+```{r}
 library(tidyr)
 library(dplyr)
 library(ggplot2)
@@ -15,7 +15,7 @@ library(lubridate)
 library(readr)
 library(readxl)
 ```
-```{r message = F}
+```{r}
 JunSep16 <- read_excel("~/nomadic-herders/LTSdata/2016JunToSep.xls")
 OctNov16 <- read_excel("~/nomadic-herders/LTSdata/2016OctNov.xlsx")
 Apr17 <- read_excel("~/nomadic-herders/LTSdata/2017Apr.xlsx")
@@ -30,7 +30,7 @@ X2016_Dec <- read_excel("~/nomadic-herders/LTSdata/2016 Dec.xlsx")
 ```
 
 
-```{r message = F}
+```{r}
 JunSep16 <- JunSep16 %>%
   mutate(Number = as.numeric(substr(Number, 2, 100)))
 OctNov16 <- OctNov16 %>%
@@ -40,24 +40,24 @@ Jul17 <- Jul17 %>%
 LTS <- bind_rows(Apr17, AugSep17, Dec17, JanMar17, Jul17, Jun17, JunSep16, May17, OctDec17, OctNov16, X2016_Dec)
 LTS <- select(LTS, Date, Time, Type, Number, Message)
 ```
-```{r message = F}
+```{r}
 LTS <- LTS %>%
   mutate(Number = ifelse(nchar(as.character(Number)) == 11, Number %% 100000000, Number),
          Number = ifelse(nchar(as.character(Number)) == 10, Number %% 10000000, Number))
 ```
-```{r message = F}
+```{r}
 n <- LTS %>%
   distinct(Number)
 nl <- as.vector(n$Number)
 nr <- n %>%
   nrow()
 ```
-```{r message = F}
+```{r}
 set.seed(111)
 id_ <- sample(10000:99999, nr, replace=FALSE)
 id <- floor(runif(nr, min = 10000, max = 99999)) ###wrong code, not truly distinct numbers generated
 ```
-```{r message = F}
+```{r}
 identifier <- data.frame(nl, id_) %>%
   mutate(Number = nl, id = id_) %>%
   select(Number, id)
@@ -71,6 +71,7 @@ LTS_yearmonth <-  LTS_deidentified_1_ %>%
   mutate(month = ifelse(nchar(as.character(month)) == 1, paste("0", sep = "", as.character(month)), as.character(month))) %>%
   mutate(year_month = paste(as.character(Year), "-", month)) 
 ```
+
 
 ### Distribution of Unique Users over Time
 
@@ -103,7 +104,9 @@ a %>%
   distinct(id) %>%
   summarize(n = n()) %>%
   ggplot(aes(x = year_month, y = n, fill = is_odd)) + 
-  geom_col()
+  geom_col()+
+  theme(axis.text.x = element_text(angle = 40, hjust = 1))
+
 a %>% 
   group_by(year_month, is_odd) %>%
   distinct(id) %>%
@@ -112,8 +115,7 @@ a %>%
   ggplot(aes(x = year_month, y = prop, fill = is_odd)) + 
   geom_col()+
   theme(axis.text.x = element_text(angle = 40, hjust = 1)) +
-  scale_fill_manual(values = c("white", "gray"))+
-  theme(axis.text.x = element_text(angle = 40, hjust = 1))
+  scale_fill_manual(values = c("white", "gray"))
 ```
 
 ### Create a list of IDs who sent in requests but never hear back from the system
@@ -135,7 +137,7 @@ In <- In_4_ %>%
   rename(Date = date)
 ```
 
-### Distribution of messages sent in messages with correct area code but never hear back over time
+### Distribution of messages sent in messages with correct area code and correct format but never hear back over time
 
 ```{r}
 bb <- In %>%
@@ -144,17 +146,21 @@ bb <- In %>%
   mutate(month = ifelse(nchar(as.character(month)) == 1, paste("0", sep = "", as.character(month)), as.character(month))) %>%
   mutate(year_month = paste(as.character(Year), "-", month)) 
 ```
+
 ```{r}
 pattern <- "^[0-9]{5}\\s+[0-9]{1}$"
 bb <- bb %>%
-  mutate(correct = grepl(pattern, Message)) %>%
-  filter(correct == TRUE)
+  mutate(correct = grepl(pattern, Message))
+bb %>%
+  group_by(correct) %>%
+  summarize(n = n())
 ```
 
 ```{r}
 bb %>%
   group_by(year_month) %>%
   filter(id %in% nhb) %>%
+  filter(correct == TRUE) %>%
   filter(area_correct == "real") %>%
   group_by(area_correct, year_month) %>%
   summarize(n = n()) %>%
@@ -233,7 +239,6 @@ qqq%>%
   theme(axis.text.x = element_text(angle = 70, hjust = 1))+ 
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
     panel.background = element_blank(), axis.line = element_blank())
-
 ```
 
 ### Distribution of New Users
@@ -262,6 +267,34 @@ bb %>%
   full_join(new_users, by = "year_month") %>%
   mutate(prop = n/nid) %>%
   ggplot(aes(x = year_month, y = prop)) + geom_col() + theme(axis.text.x = element_text(angle = 40, hjust = 1))
+```
+
+### Distribution of new users each month (includes whether they dropped within the same month)
+
+```{r}
+gg <- bb %>%
+  group_by(id) %>%
+  summarize(min = min(Date), max = max(Date)) %>%
+  mutate(Yearmin = year(min), monthmin = month(min), Yearmax = year(max), monthmax = month(max)) %>%
+  mutate(monthmin = ifelse(nchar(as.character(monthmin)) == 1, paste("0", sep = "", as.character(monthmin)), as.character(monthmin))) %>%
+  mutate(monthmax = ifelse(nchar(as.character(monthmax)) == 1, paste("0", sep = "", as.character(monthmax)), as.character(monthmax))) %>%
+  mutate(year_month_min = paste(as.character(Yearmin), "-", monthmin))%>%
+  mutate(year_month_max = paste(as.character(Yearmax), "-", monthmax))%>%
+  mutate(drop_same_month = year_month_min == year_month_max) %>%
+  group_by(year_month_min, drop_same_month) %>%
+  summarize(n = n()) 
+gg %>%
+  ggplot(aes(x = year_month_min, y = n, fill = drop_same_month)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 40, hjust = 1))
+```
+
+```{r}
+gg %>%
+  filter(year_month_min != "2017 - 12") %>%
+  group_by(year_month_min) %>%
+  mutate(prop = n/sum(n)) %>%
+  ggplot(aes(x = year_month_min, y = prop, fill = drop_same_month))+geom_col()+
+  theme(axis.text.x = element_text(angle = 40, hjust = 1))
 ```
 
 ### Distribution of Those occured only once
