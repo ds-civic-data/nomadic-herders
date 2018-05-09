@@ -51,7 +51,7 @@ The above table shows the descriptive statistics of the distribution of the numb
 | 4-6 Day Forecast | 14,628             |
 | Pasture          | 1,349              |
 
-Table 2: Total counts of requests for each of the three types of information offered by the LTS-2
+Table 2: (above) Total counts of requests for each of the three types of information offered by the LTS-2
 
 Users seem mostly interested in weather information. Of the approximately 52,000 correctly formatted messages (messages that contain only a five-digit area code, and a request code between 1 and 3), about 36,000 were for 1-3 day weather forecasts and 14,000 were for 4-6 day weather forecasts. In comparison, only about 1300 requests for pasture information, suggesting that weather information is the main type of information users are interested in.
 
@@ -168,7 +168,7 @@ In %>%
     ## 10    10     4
     ## # ... with 23 more rows
 
-Fig. 2: The distribution of number of area codes requested by individual users. Most users only requested information for a single area code.
+Fig. 2: (above) The distribution of number of area codes requested by individual users. Most users only requested information for a single area code.
 
 The above bar plot shows the distribution of number of area codes for which individual users requested information. Most users only requested information for one area code (around 10,000). Number of area codes drops off significantly after that, with about 2,500 users requesting 2. It’s difficult to know whether this pattern is at all related to the geographical location of users, because many users only queried the system a single time; however, using the shiny dashboard mapping geographical usage, it’s possible to gain some insight into the spatial distribution of users.
 
