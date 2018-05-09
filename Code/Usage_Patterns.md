@@ -18,7 +18,7 @@ In %>%
   count(n) %>%
   head(n = 7) %>%
   mutate(n = as.character(n)) %>%
-  ggplot(aes(x = n, y = nn)) + geom_col()
+  ggplot(aes(x = n, y = nn)) + geom_col() + labs(title = "Distribution of Users by Number of Area Codes Requested", y = "Users", x = "Number of Area Codes") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(),  axis.line = element_blank())
 ```
 
 ![](Usage_Patterns_files/figure-markdown_github/unnamed-chunk-1-1.png)
@@ -47,21 +47,12 @@ In %>%
     ## 10    10     4
     ## # ... with 23 more rows
 
-| *Area Codes Requested* | *Number of Users* |
-|------------------------|:-----------------:|
-| 1                      |       10142       |
-| 2                      |        2281       |
-| 3                      |        523        |
-| 4                      |        170        |
-| 5                      |         49        |
-| 6                      |         15        |
-| 7                      |         13        |
-| 8                      |         2         |
-
-For the most part, people only ask for information from a single location. 10,142 people requested only 1 area code.
+``` r
+# How many people are frequent users?
+```
 
 ``` r
-# Do they request information from multiple locations in a day?
+# How many times do users request information?
 
 mult_requests <- In %>%
   group_by(id, Date) %>%
@@ -89,10 +80,6 @@ mult_requests %>%
 
 Here, number is equivalent to the number of days at least one user sent in more than one correctly formatted request for information. The max is the max proportion of users who sent in multiple requests, and min is the min proportion of users who sent in more than one request for information. Mean and median are about equivalent, suggesting that they're fairly indicative of the center of the data.
 
-``` r
-# do weather requests/number of locations requested by user change over time?
-```
-
 What kind of information do people ask about?
 =============================================
 
@@ -106,15 +93,15 @@ Correct <- read_csv("~/nomadic-herders/data/Correct.csv")
 
     ## Parsed with column specification:
     ## cols(
-    ##   X1 = col_character(),
-    ##   id = col_character(),
-    ##   Date = col_character(),
-    ##   Time = col_character(),
+    ##   X1 = col_integer(),
+    ##   id = col_integer(),
+    ##   Date = col_date(format = ""),
+    ##   Time = col_datetime(format = ""),
     ##   Type = col_character(),
-    ##   area = col_character(),
-    ##   request = col_character(),
-    ##   correct = col_character(),
-    ##   area_1 = col_character(),
+    ##   area = col_integer(),
+    ##   request = col_integer(),
+    ##   correct = col_logical(),
+    ##   area_1 = col_integer(),
     ##   area_correct = col_character()
     ## )
 
@@ -140,7 +127,7 @@ Correct %>%
   ggplot(aes(x = Date, y = num, fill = request)) + geom_col(position = "dodge")
 ```
 
-![](Usage_Patterns_files/figure-markdown_github/unnamed-chunk-4-1.png)
+![](Usage_Patterns_files/figure-markdown_github/unnamed-chunk-5-1.png)
 
 ``` r
 # By proportion?
@@ -157,11 +144,44 @@ Correct %>%
   ggplot(aes(x = Date, y = prop, fill = request)) + geom_col(position = "dodge")
 ```
 
-![](Usage_Patterns_files/figure-markdown_github/unnamed-chunk-4-2.png)
+![](Usage_Patterns_files/figure-markdown_github/unnamed-chunk-5-2.png)
 
 ``` r
-# by area?
+# THIS ANALYSIS IS INCLUDED IN TYPE OF REQUEST GRAPH
+Correct %>% 
+  filter(request <4, request > 0) %>%
+  group_by(request) %>%
+  summarise(n = n())
 ```
+
+    ## # A tibble: 3 x 2
+    ##   request     n
+    ##     <int> <int>
+    ## 1       1 36188
+    ## 2       2 14628
+    ## 3       3  1349
+
+``` r
+# NUMBER OF USERS ASKING FOR PASTURE INFORMATION
+
+ids <- Correct %>% 
+  filter(request == "3") %>%
+  group_by(id) %>%
+  summarise(n = n()) %>%
+  arrange(desc(n))
+
+ids <- as.vector(ids$id)  
+
+Correct %>%
+  filter(id %in% ids) %>%
+  mutate(year = year(Date), month = month(Date)) %>%
+  group_by(year, month) %>%
+  summarise(n = n()) %>%
+  mutate(date = make_date(year = year, month = month)) %>%
+  ggplot(aes(x = date, y = n)) + geom_line()
+```
+
+![](Usage_Patterns_files/figure-markdown_github/unnamed-chunk-5-3.png)
 
 Which area codes have the most usage over time? How does that relate to weather patterns?
 =========================================================================================
@@ -184,7 +204,7 @@ In %>%
   ggplot(aes(x = Date, y = n)) + geom_line()
 ```
 
-![](Usage_Patterns_files/figure-markdown_github/unnamed-chunk-5-1.png)
+![](Usage_Patterns_files/figure-markdown_github/unnamed-chunk-6-1.png)
 
 ``` r
 In %>% 
@@ -196,7 +216,7 @@ In %>%
   ggplot(aes(x = Date, y = n)) + geom_line()
 ```
 
-![](Usage_Patterns_files/figure-markdown_github/unnamed-chunk-5-2.png)
+![](Usage_Patterns_files/figure-markdown_github/unnamed-chunk-6-2.png)
 
 ``` r
 In %>% 
@@ -208,7 +228,7 @@ In %>%
   ggplot(aes(x = Date, y = n)) + geom_line()
 ```
 
-![](Usage_Patterns_files/figure-markdown_github/unnamed-chunk-5-3.png)
+![](Usage_Patterns_files/figure-markdown_github/unnamed-chunk-6-3.png)
 
 ``` r
 In %>% 
@@ -220,7 +240,7 @@ In %>%
   ggplot(aes(x = Date, y = n)) + geom_line()
 ```
 
-![](Usage_Patterns_files/figure-markdown_github/unnamed-chunk-5-4.png)
+![](Usage_Patterns_files/figure-markdown_github/unnamed-chunk-6-4.png)
 
 ``` r
 # Read in zip coords csv

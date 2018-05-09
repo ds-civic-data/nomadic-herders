@@ -206,6 +206,17 @@ write.csv(pop_areas, "pop_areas.csv")
 ```
 
 ```{r}
+Out %>% group_by(weather_eng) %>%
+  summarise(n = n()) %>%
+  ggplot(aes(x = weather_eng, y = n)) + geom_col()
 
+Out %>% mutate(month = month(Date), year = year(Date)) %>%
+  filter(!is.na(weather_eng)) %>%
+  group_by(month, year, weather_eng) %>%
+  summarise(n = n()) %>%
+  ungroup() %>%
+  mutate(date = make_date(year = year, month = month)) %>%
+  ggplot(aes(x = date, y = n, fill = weather_eng)) + geom_col() +
+  labs(title = "Outgoing Messages by Weather Type", x = "Date", y ="Messages", fill = "Weather Type") 
 
 ```

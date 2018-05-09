@@ -83,32 +83,32 @@ last_use <- In %>%
   arrange(year)
 
 left_join(last_use, total_use, by = c("year" = "year", "month" = "month")) %>%
-  mutate(churn = n/total)
+  mutate(churn = n/total) %>% arrange(desc(churn))
 ```
 
     ## # A tibble: 19 x 5
     ## # Groups:   month [12]
     ##    month  year     n total churn
     ##    <dbl> <dbl> <int> <int> <dbl>
-    ##  1  6.00  2016  2731  3474 0.786
-    ##  2  7.00  2016   686  1008 0.681
-    ##  3  8.00  2016   392   611 0.642
-    ##  4  9.00  2016   448   635 0.706
-    ##  5 10.0   2016   435   706 0.616
-    ##  6 11.0   2016  1826  2387 0.765
-    ##  7 12.0   2016  2937  3047 0.964
-    ##  8  1.00  2017   539  1581 0.341
-    ##  9  2.00  2017   350  1040 0.337
-    ## 10  3.00  2017   314  1080 0.291
+    ##  1 12.0   2017   435   435 1.00 
+    ##  2 12.0   2016  2937  3047 0.964
+    ##  3  6.00  2016  2731  3474 0.786
+    ##  4 11.0   2016  1826  2387 0.765
+    ##  5  9.00  2016   448   635 0.706
+    ##  6  7.00  2016   686  1008 0.681
+    ##  7  8.00  2016   392   611 0.642
+    ##  8 10.0   2016   435   706 0.616
+    ##  9 10.0   2017   449   761 0.590
+    ## 10 11.0   2017   378   641 0.590
     ## 11  4.00  2017   487  1190 0.409
     ## 12  5.00  2017   326   838 0.389
-    ## 13  6.00  2017   133   439 0.303
-    ## 14  7.00  2017    98   348 0.282
-    ## 15  8.00  2017   124   375 0.331
-    ## 16  9.00  2017   151   402 0.376
-    ## 17 10.0   2017   449   761 0.590
-    ## 18 11.0   2017   378   641 0.590
-    ## 19 12.0   2017   435   435 1.00
+    ## 13  9.00  2017   151   402 0.376
+    ## 14  1.00  2017   539  1581 0.341
+    ## 15  2.00  2017   350  1040 0.337
+    ## 16  8.00  2017   124   375 0.331
+    ## 17  6.00  2017   133   439 0.303
+    ## 18  3.00  2017   314  1080 0.291
+    ## 19  7.00  2017    98   348 0.282
 
 ``` r
 left_join(last_use, total_use, by = c("year" = "year", "month" = "month")) %>%
@@ -120,3 +120,21 @@ ggplot(aes(x = date, y = churn)) + geom_col() + labs(title = "Monthly Churn Rate
 ```
 
 ![](Churn_files/figure-markdown_github/unnamed-chunk-1-1.png)
+
+``` r
+a <- date("2016-12-01")
+b <- date("2016-06-01")
+e <- date("2017-07-01")
+d <- date("2017-10-01")
+
+left_join(last_use, total_use, by = c("year" = "year", "month" = "month")) %>%
+  mutate(churn = n/total) %>%
+  ungroup() %>%
+  filter(!row_number() == n()) %>%
+  mutate(date = make_date(year = year, month = month)) %>%
+ggplot(aes(x = date, y = churn)) + geom_line() + labs(title = "Monthly Churn Rate June 2016 - November 2017", y = "Rate", x = "Month") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(),  axis.line = element_line(colour = "black")) + annotate("text", x = a, y = 1, label = c("December")) +
+  annotate("text", x = b, y = 0.82, label = c("June")) + annotate("text", x = e, y = 0.33, label = c("July")) +
+annotate("text", x = d, y = 0.62, label = c("November"))
+```
+
+![](Churn_files/figure-markdown_github/unnamed-chunk-1-2.png)
