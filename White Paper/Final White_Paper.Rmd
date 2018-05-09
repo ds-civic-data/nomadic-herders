@@ -14,13 +14,17 @@ library(lubridate)
 ```
 
 
+## Abstract:
+
+The goal of this project was to analyze spatio-temporal usage of Mercycorp Mongolia's LTS-2 SMS information system. We had three areas of focus in our analysis: request patterns of individual users, overall request patterns over time, and request patterns over time. Since the data set we worked with only covers an 18 month period, we are relatively limited in our ability to make conclusions about system usage over time and space. Still, there do appear to be patterns in requests sent into the system which may illlustrate more general trends. Requests for information appear to increase in winter months (months cold enough for snow). Additionally, most users request information for only one or two area codes. 
+
 ## The System:
 
 The LTS-2 is an SMS information system designed to help Mongolian Nomadic herders to improve lives outcomes. The system works by providing weather forecast and pasture information to herders by text message. Anyone with a Mongolian phone number can text into the system, though the information provided is tailored for nomadic herders. In particular, the system aims to reduce livestock deaths due to severe weather, and ensure long-term sustainability of herding by reducing overgrazing. 
 
-Users can request weather or pasture information via text. One to three, and four day forecasts are available, in addition to pasture information pulled from the Livestock Early Warning system run by Texas A&M University. To receive a text message response, users must request information for a specific bagh (subdistrict). The data we analyzed is comprised of all the incoming and outgoing texts associated with the LTS-2 system. Incoming texts consist of a bagh-level area code and an integer from 1-3 indicating request type. 1 and 2 represent one- to three-day and four- to six-day forecast respectively, while 3 represents a request for pasture information. The formatting of an incoming text must conform to fairly strict rules for a user to receive a response. The text must begin with a 5 digit bagh area code, followed by at least one space and the request type. Any change in formatting, or addition of other information will mean a user does not receive a response. In general, outgoing weather forecasts contain the starting date of the forecast interval, one of four predicted meteorological conditions (sun, clouds, rain, snow). When available, higher resolution forecasts that include high and low temperature are provided. 
+Users can request weather or pasture information via text. One to three, and four day forecasts are available, in addition to pasture information pulled from the Livestock Early Warning system run by Texas A&M University. To receive a text message response, users must request information for a specific _bagh_ (Mongolian subdistrict). The data we analyzed is comprised of all the incoming and outgoing texts associated with the LTS-2 system. Incoming texts consist of a _bagh_-level area code and an integer from 1-3 indicating request type. 1 and 2 represent one- to three-day and four- to six-day forecast respectively, while 3 represents a request for pasture information. The formatting of an incoming text must conform to fairly strict rules for a user to receive a response. The text must begin with a 5 digit bagh area code, followed by at least one space and the request type. Any change in formatting, or addition of other information will mean a user does not receive a response. In general, outgoing weather forecasts contain the starting date of the forecast interval, one of four predicted meteorological conditions (sun, clouds, rain, snow). When available, higher resolution forecasts that include high and low temperature are provided. 
 
-## The Data
+## The Data:
 
 As described above the system is comprised of incoming and outgoing messages in the system. Due to the system’s cataloging method, the dataset does not contain a response for every request, or a request for every response. The first is due to user error. Improperly formatted messages are catalogued but do not receive a response. The second, is a system error. In the dataset, these errors appear to be messages sent to phone numbers that never sent requests for information; however, these messages are due to transcription errors in the system’s data collection method, and no actual messages were sent out. An update to the system in the fall of 2016 mostly solved the problem. These phantom messages appear only infrequently after September 2016. 
 
@@ -36,7 +40,7 @@ The raw data we analyzed contained 125,000 observations spanning from June of 20
 |50171|2017-04-01|08:37:25| Out | 4sar1: uulerheg
 
 
-Fig 1: (above) Several lines of the de-identified, raw dataset.
+__Fig. 1__ Several lines of the de-identified, raw dataset.
 
 
 ## Analysis:
@@ -45,30 +49,9 @@ Our analysis of the LTS-2 dataset focused identifying and describing patterns in
 
 In analyzing the ways the system is used, we focused on three major areas. First, characterizing the average user. Second, describing in general trends in system usage over time, and finally looking at the spatial distribution of usage.
 
-_Individual Users:_
-
-We began by characterizing the average user. In total, 11,520 different users requested information from the system between June 2016 and December. The majority of these users requested information relatively few times. 
-
-|Mean |Median |Min |Max |
-|---|---|---|---|
-|4.63|2|1|492|
-
-Table 1: (above) Descriptive statistics of the number of the distribution of times individual users requested information.
-
-The above table shows the descriptive statistics of the distribution of the number of times individual users requested information. With a mean of 4.63 and median of 2, the distribution of the number of requests by individual users, suggesting that many of the system’s users stop using the system after a short time.
-
-|Type of Request |Number of Requests |
-|---|---|
-|1-3 Day Forecast|36,188|
-|4-6 Day Forecast|14,628|
-|Pasture|1,349|
-
-Table 2: (above) Total counts of requests for each of the three types of information offered by the LTS-2 
-
-Users seem mostly interested in weather information. Of the approximately 52,000 correctly formatted messages (messages that contain only a five-digit area code, and a request code between 1 and 3), about 36,000 were for 1-3 day weather forecasts and 14,000 were for 4-6 day weather forecasts. In comparison, only about 1300 requests for pasture information, suggesting that weather information is the main type of information users are interested in.
+### Individual Users:
 
 ```{r}
-
 
 # load deidentified data
 
@@ -113,17 +96,62 @@ In <- In %>%
 In %>% filter(area_correct == "real") %>%
   summarise(n = n())
 
-write.csv(In, file = "In.csv")
-
 # separate message column into area code and request type - this probably only makes sense to do for correct messages
 Correct <- In %>%
   filter(correct == "TRUE") %>%
-  separate(Message, c("area", "request"), sep = ("(\\s{1,4}|\\.)"), extra = "drop")
-
-write.csv(Correct, file = "Correct.csv")
+  separate(Message, c("Area", "request"), sep = ("(\\s{1,4}|\\.)"), extra = "drop")
 
 
-# create 
+# Calculate number of unique users
+In %>% distinct(id) %>%
+  summarise(n = n())
+
+
+```
+
+We began by characterizing the average user. In total, 13,239 different users requested information from the system between June 2016 and December 2017. The majority of these users requested information relatively few times. 
+
+|Mean |Median |Min |Max |
+|---|---|---|---|
+|4.63|2|1|492|
+
+__Table 1__ Descriptive statistics of the number of the distribution of times individual users requested information.
+
+The above table shows the descriptive statistics of the distribution of the number of times individual users requested information. With a mean of 4.63 and median of 2, the distribution of the number of requests by individual users, suggesting that many of the system’s phone numbers request information only a few times.
+
+```{r}
+# Calcaulate the number of requests for each kind of information
+
+Correct %>% 
+  filter(request <4, request > 0) %>%
+  group_by(request) %>%
+  summarise(num = n())
+
+# Number of users asking for each kind of request
+
+Correct %>% 
+  filter(request <4, request > 0) %>%
+  distinct(id, .keep_all = TRUE) %>%
+  group_by(request) %>%
+  summarise(num = n()) %>%
+  arrange(desc(num))
+
+```
+
+|Type of Request |Number of Requests |
+|---|---|
+|1-3 Day Forecast|36,188|
+|4-6 Day Forecast|14,628|
+|Pasture|1,349|
+
+__Table 2__ Total counts of requests for each of the three types of information offered by the LTS-2 system: 1-3 day forecast, 4-6 day forecast, and pasture information.
+
+
+Users seem mostly interested in weather information. Of the approximately 52,000 correctly formatted messages (messages that contain only a five-digit area code, and a request code between 1 and 3), about 36,000 were for 1-3 day weather forecasts and 14,000 were for 4-6 day weather forecasts. In comparison, only about 1300 requests for pasture information, suggesting that weather information is the main type of information users are interested in.
+
+```{r}
+
+# create visualization of the number of area codes requested
 In %>%
   group_by(id) %>%
   distinct(area, .keep_all = TRUE) %>%
@@ -143,9 +171,9 @@ In %>%
 
 ```
 
-Fig. 2: (above) The distribution of number of area codes requested by individual users. Most users only requested information for a single area code.
+__Fig. 2__ The distribution of number of area codes requested by service users. Most users only requested information about a single area code in the course of their use of the system. 
 
-The above bar plot shows the distribution of number of area codes for which individual users requested information. Most users only requested information for one area code (around 10,000). Number of area codes drops off significantly after that, with about 2,500 users requesting 2. It’s difficult to know whether this pattern is at all related to the geographical location of users, because many users only queried the system a single time; however, using the shiny dashboard mapping geographical usage, it’s possible to gain some insight into the  spatial distribution of users. 
+The above bar plot shows the distribution of the number of area codes for which users requested information. Most users only requested information for one area code (around 10,000) in their spand of their . Number of area codes drops off significantly after that, with about 2,500 users requesting 2. It’s difficult to know whether this pattern is at all related to the geographical location of users, because many users only queried the system a single time; however, using the shiny dashboard mapping geographical usage, it’s possible to gain some insight into the  spatial distribution of users. 
 
 ```{r}
 
@@ -179,7 +207,7 @@ bb %>%
 
 ```
 
-Fig. 3: (above) Proportion of incorrectly formatted messages by type over time. 
+__Fig. 3__ Proportion of incoming messages that were incorrectly formatted and/or contained area codes that do not correspond real area codes. 
 
 The graph above shows the proportions of invalid messages each month, which are caused by incorrectly formatting and/or area codes that do not correspond to actual places. We see an overall decreasing pattern in the total proportion of invalid requests. The proportion of messages with incorrect formatting does not change much over time, while the use of non-existing area codes in messages tends to decrease. Incorrect formatting appears to be the most common and consistent type of user errors. 
 
@@ -199,29 +227,28 @@ p <- LTS_yearmonth %>%
   filter(n == 1) %>%
   select(id)
 pp <- as.vector(p$id)
+
 LTS_yearmonth %>%
   mutate(only_once = id %in% pp) %>%
-  group_by(year_month, only_once) %>%
+  mutate(usage = ifelse(only_once == TRUE, "Only Once", "Once or More")) %>%
+  group_by(year_month, usage) %>%
   distinct(id)  %>%
   summarize(n = n()) %>%
   mutate(prop = n/sum(n)) %>%
-  ggplot(aes(x = year_month, y = n, fill = only_once)) + geom_col()+
+  mutate(only_once = usage) %>%
+  ggplot(aes(x = year_month, y = n, fill = usage)) + geom_col()+
   theme(axis.text.x = element_text(angle = 40, hjust = 1)) +
-  ggtitle("Distribution of Total Users Each Month") +
-  xlab("Year-Month") +
-  ylab("Number of Users") +
-  labs(fill= "Used only once") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank())
+ labs(title = "Distribution of Users by ", x = "Month", y = "Number of Users", fill = "Number of Requests") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank())
 
 ```
 
-
+__Fig. 4__ The dis
 
 The graph above shows the total number of users that texted into the system each month, along with the proportion of users that only ever text into the system once. Clearly, a significant portion of users text into the LTS-2 system and then never use it again. Any conclusion about seasonal usage is difficult given the newness of the LTS system, though the apparent trend seems to lower usage in the summer months (June, July, August, and September). Three months, in particular, stand out both as having the most number of users and a large proportion of one-time users: June, November, and December 2016. 
 
 Looking at the ways individual users 	queried the system, two trends stand out. The first is that most users used the system a small number of times. The second is that the number of users is inconsistent over time.
  
-_General Patterns in Usage:_
+#_General Patterns in Usage:_
 
 To get a better understanding of the ways users enter and exit the system, and to understand aggregate usage patterns, we looked at spatio-temporal usage.
 
@@ -330,5 +357,4 @@ We expected to see a seasonal cycle in the usage of the LTS-2 system due to the 
 
 ## Conclusion:
 
-
-
+We analyzed the usage of the spatial and temporal usage of the LTS-2 system and examined user behavior. Temporal analysis shows a seasonal spike in usage during winter time. We also find that usage of the system decreased. The system was queried many more times in the winter of 2016 as compared to the winter of 2017. Additionally, we find that the locations system users are interested in getting information for tended to be fairly static. Most users only requested forecasts for one or two area codes. Our most interesting insight comes from examining user behavior. We find that requests for weather forecasts significantly outnumber requests for pasture information. We also find that many users sent in invalid requests. Adding an error message function to the system, in which invalid messages receive a response with instructions for correct formatting, may be a useful feature.
