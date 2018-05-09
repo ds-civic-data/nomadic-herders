@@ -25,27 +25,42 @@ In <- LTS_data %>%
   filter(Type == "in")
 
 # regexpression to pull out messages in correct/incorrect format
-correct_exp <- "(^[0-9]{5}\\s{1,}[0-9]{1}$)"
+correct_exp <- "^[0-9]{5}\\s+[0-9]{1}$"
 
 
 # create correct/incorrect column
-In$correct <- if_else(grepl(correct_exp,In$Message),'correct','incorrect')
+In$correct <- grepl(correct_exp,In$Message)
 
-In <- In %>%
-  mutate(correct = ifelse(nchar(Message) > 7, 'incorrect', correct))
+
 # create area column for correct/incorrect
 In <- In %>%
   mutate(area = str_extract(In$Message, "[0-9]{5}")) 
 
 # Is the area code correct?
 
-zip_data <- read_excel("~/nomadic-herders/LTSdata/Zip_extension_2016_2017.xlsx")
+zip_data <- read_excel("~/nomadic-herders/LTSdata/Zip_extension_2016_2017.xlsx") %>% rename(`Zip code` = `Regional code`)
+zip_data2 <- read_excel("~/nomadic-herders/LTSdata/Zip_extension_2017_2018.xlsx") %>%
+  select("Sub-District", "Zip code", "Latitude", "Longitude") 
+ 
 
-area_vector <- as.vector(zip_data$`Regional code`)
+Zip_Data <- bind_rows(zip_data, zip_data2) %>%
+  distinct(`Zip code`)
+
+area_vector <- as.vector(Zip_Data$`Zip code`)
 
 In <- In %>%
-  mutate(area_correct = if_else(In$area %in% area_vector, 'real', 'fake'))
+  mutate(area_correct = if_else(In$area %in% area_vector, 'real', 'fake')) %>% mutate(area_correct = if_else(is.na(In$area), 'fake', area_correct))
 
+In %>% filter(area_correct == "real") %>%
+  summarise(n = n())
+```
+
+    ## # A tibble: 1 x 1
+    ##       n
+    ##   <int>
+    ## 1 56142
+
+``` r
 write.csv(In, file = "In.csv")
 
 # separate message column into area code and request type - this probably only makes sense to do for correct messages

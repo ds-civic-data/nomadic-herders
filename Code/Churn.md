@@ -26,6 +26,52 @@ In <- read_csv("~/nomadic-herders/LTSdata/In.csv")
 In <- In %>%
   select(-X1)
 
+first_use <- In %>%
+  mutate(month = month(Date), year = year(Date)) %>%
+  group_by(id) %>%
+  arrange(month, year) %>%
+  slice(1) %>%
+  ungroup() %>%
+  group_by(month, year) %>%
+  summarise(n = n()) %>%
+  arrange(year)
+
+total_use <- In %>%
+  mutate(month = month(Date), year = year(Date)) %>%
+  group_by(month, year) %>%
+  distinct(id, .keep_all = TRUE) %>%
+  summarise(total = n()) %>%
+  arrange(year)
+
+left_join(first_use, total_use, by = c("year" = "year", "month" = "month")) %>%
+  mutate(churn = n/total)
+```
+
+    ## # A tibble: 19 x 5
+    ## # Groups:   month [12]
+    ##    month  year     n total churn
+    ##    <dbl> <dbl> <int> <int> <dbl>
+    ##  1  6.00  2016  3334  3474 0.960
+    ##  2  7.00  2016   550  1008 0.546
+    ##  3  8.00  2016   266   611 0.435
+    ##  4  9.00  2016   338   635 0.532
+    ##  5 10.0   2016   384   706 0.544
+    ##  6 11.0   2016  1697  2387 0.711
+    ##  7 12.0   2016  1725  3047 0.566
+    ##  8  1.00  2017  1581  1581 1.00 
+    ##  9  2.00  2017   556  1040 0.535
+    ## 10  3.00  2017   557  1080 0.516
+    ## 11  4.00  2017   597  1190 0.502
+    ## 12  5.00  2017   288   838 0.344
+    ## 13  6.00  2017   114   439 0.260
+    ## 14  7.00  2017    83   348 0.239
+    ## 15  8.00  2017   129   375 0.344
+    ## 16  9.00  2017   155   402 0.386
+    ## 17 10.0   2017   441   761 0.580
+    ## 18 11.0   2017   293   641 0.457
+    ## 19 12.0   2017   151   435 0.347
+
+``` r
 last_use <- In %>% 
   mutate(month = month(Date), year = year(Date)) %>%
   group_by(id) %>%
@@ -34,14 +80,6 @@ last_use <- In %>%
   ungroup() %>%
   group_by(month, year) %>%
   summarise(n = n()) %>%
-  arrange(year)
-
-
-total_use <- In %>%
-  mutate(month = month(Date), year = year(Date)) %>%
-  group_by(month, year) %>%
-  distinct(id, .keep_all = TRUE) %>%
-  summarise(total = n()) %>%
   arrange(year)
 
 left_join(last_use, total_use, by = c("year" = "year", "month" = "month")) %>%
