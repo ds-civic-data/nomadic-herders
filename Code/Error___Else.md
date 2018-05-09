@@ -65,7 +65,7 @@ identifier <- data.frame(nl, id_) %>%
 
 ``` r
 LTS_deidentified_1_ <- read_csv("~/nomadic-herders/data/LTS_deidentified (1).csv")
-In_4_ <- read_csv("~/nomadic-herders/LTSdata/In (4).csv")
+In_4_ <- read_csv("~/nomadic-herders/LTSdata/In (6).csv")
 LTS_yearmonth <-  LTS_deidentified_1_ %>%
   mutate(Date = ymd(Date)) %>%
   mutate(Year = year(Date), month = month(Date)) %>%
@@ -268,12 +268,33 @@ qqq <- bb %>%
 
 ``` r
 qqq$code = factor(qqq$area, levels = c(62267, 84217, 46135, 67179, 23177, 62110))
+qqq
+```
+
+    ## # A tibble: 93 x 5
+    ## # Groups:   area, area_correct [6]
+    ##    area  area_correct year_month     n code 
+    ##    <chr> <chr>        <chr>      <int> <fct>
+    ##  1 46135 real         2016 - 12    209 46135
+    ##  2 62267 real         2016 - 12    196 62267
+    ##  3 67179 real         2016 - 12    163 67179
+    ##  4 62267 real         2017 - 03    143 62267
+    ##  5 62267 real         2017 - 04    131 62267
+    ##  6 62267 real         2017 - 05    129 62267
+    ##  7 84217 real         2016 - 11    128 84217
+    ##  8 46135 real         2017 - 01    127 46135
+    ##  9 67179 real         2017 - 01    122 67179
+    ## 10 23177 real         2017 - 04    116 23177
+    ## # ... with 83 more rows
+
+``` r
 qqq%>%
   ggplot(aes(x = year_month, y = n)) + geom_col(position = "dodge") +
   facet_wrap(~code, ncol = 2) +
   theme(axis.text.x = element_text(angle = 70, hjust = 1))+ 
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-    panel.background = element_blank(), axis.line = element_blank())
+    panel.background = element_blank(), axis.line = element_blank()) +
+    ggtitle("Top 6 Most Often Requested Area Codes") 
 ```
 
 ![](Error___Else_files/figure-markdown_github/unnamed-chunk-21-1.png)
@@ -291,7 +312,11 @@ new_users <- bb %>%
   summarize(n = n()) 
 new_users %>%
   ggplot(aes(x = year_month, y = n)) + geom_col() +
-  theme(axis.text.x = element_text(angle = 40, hjust = 1))
+  theme(axis.text.x = element_text(angle = 40, hjust = 1)) +
+  ggtitle("Number of New Users Each Month") +
+  xlab("Year-Month") +
+  ylab("Number of New Users") +
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank())
 ```
 
 ![](Error___Else_files/figure-markdown_github/unnamed-chunk-22-1.png)
@@ -396,3 +421,158 @@ LTS_yearmonth %>%
 ```
 
 ![](Error___Else_files/figure-markdown_github/unnamed-chunk-28-1.png)
+
+``` r
+poor_guy <- bb %>% filter(id %in% nhb) %>% group_by(id) %>% summarize(n = n()) %>% arrange(desc(n)) %>% head(1) %>% select(id) %>% as.numeric()
+poor_guy
+```
+
+    ## [1] 22818
+
+``` r
+bb %>%
+  filter(id == poor_guy) %>%
+  group_by(correct, area_correct) %>%
+  summarize(n = n())
+```
+
+    ## # A tibble: 2 x 3
+    ## # Groups:   correct [?]
+    ##   correct area_correct     n
+    ##   <lgl>   <chr>        <int>
+    ## 1 T       fake            14
+    ## 2 T       real            69
+
+``` r
+bb %>%
+  filter(id %in% nhb) %>%
+  group_by(id) %>%
+  mutate(min = min(Date), max = max(Date), period = max - min) %>%
+  group_by(period) %>%
+  summarize(n = n()) %>%
+  mutate(prop = n/sum(n))
+```
+
+    ## # A tibble: 114 x 3
+    ##    period     n    prop
+    ##    <time> <int>   <dbl>
+    ##  1 0       3708 0.597  
+    ##  2 1        254 0.0409 
+    ##  3 2        138 0.0222 
+    ##  4 3        154 0.0248 
+    ##  5 4         86 0.0139 
+    ##  6 5        110 0.0177 
+    ##  7 6        105 0.0169 
+    ##  8 7         61 0.00982
+    ##  9 8         61 0.00982
+    ## 10 9         78 0.0126 
+    ## # ... with 104 more rows
+
+``` r
+bb %>%
+  mutate(all_correct = ifelse(correct == TRUE & area_correct == "real", T, F)) %>%
+  group_by(year_month, all_correct) %>%
+  distinct(id) %>%
+  summarize(n = n()) %>%
+  mutate(prop = n/sum(n)) %>%
+  ggplot(aes(x = year_month, y = prop, fill = all_correct)) + geom_col()
+```
+
+![](Error___Else_files/figure-markdown_github/unnamed-chunk-32-1.png)
+
+``` r
+p <- LTS_yearmonth %>%
+  filter(Type == "in") %>%
+  group_by(id) %>%
+  summarize(n = n()) %>%
+  filter(n == 1) %>%
+  select(id)
+pp <- as.vector(p$id)
+LTS_yearmonth %>%
+  mutate(only_once = id %in% pp) %>%
+  group_by(year_month, only_once) %>%
+  distinct(id)  %>%
+  summarize(n = n()) %>%
+  mutate(prop = n/sum(n)) %>%
+  ggplot(aes(x = year_month, y = n, fill = only_once)) + geom_col()+
+  theme(axis.text.x = element_text(angle = 40, hjust = 1)) +
+  ggtitle("Distribution of Total Users Each Month") +
+  xlab("Year-Month") +
+  ylab("Number of Users") +
+  labs(fill= "Used only once") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank())
+```
+
+![](Error___Else_files/figure-markdown_github/unnamed-chunk-33-1.png)
+
+``` r
+bb %>%
+  mutate(Messages = ifelse(correct == TRUE & area_correct == "real", "Correct Format, Correct Area Code", 
+                           ifelse(correct == TRUE & area_correct == "fake", "Incorrect Area Code, Correct Format", 
+                                  ifelse(correct == FALSE & area_correct == "real", "Incorrect Format, Correct Area Code", "Incorrect Area Code, Incorrect Format")))) %>%
+  group_by(year_month, Messages) %>%
+  summarize(n = n()) %>%
+  mutate(prop = n/sum(n)) %>%
+  filter(Messages != "Correct Format, Correct Area Code") %>%
+  ggplot(aes(year_month, prop, fill = Messages)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 40, hjust = 1)) +
+  scale_fill_manual(values=c("tan1", "cadetblue4", "lightcoral")) +
+  ggtitle("Proportion of Invalid Incoming Messages") +
+  xlab("Year-Month") +
+  ylab("Proportion") + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank())
+```
+
+![](Error___Else_files/figure-markdown_github/unnamed-chunk-34-1.png)
+
+``` r
+bb %>%
+  mutate(Messages = ifelse(correct == TRUE & area_correct == "real", "Valid Messages", "Invalid Messages")) %>%
+  filter(Type == "in") %>%
+  group_by(year_month, Messages) %>%
+  summarize(n = n()) %>%
+  ggplot(aes(x = year_month, y = n, fill = Messages)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 40, hjust = 1)) +
+  ggtitle("Distribution of Incoming Messages Each Month") +
+  xlab("Year-Month") +
+  ylab("Number of Requests") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank())
+```
+
+![](Error___Else_files/figure-markdown_github/unnamed-chunk-35-1.png)
+
+``` r
+bb %>%
+  group_by(year_month) %>%
+  summarize(n = n()) %>%
+  ggplot(aes(x = year_month, y = n)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 40, hjust = 1)) +
+  ggtitle("Number of Requests Each Month") +
+  xlab("Year-Month") +
+  ylab("Number of Requests") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank())
+```
+
+![](Error___Else_files/figure-markdown_github/unnamed-chunk-36-1.png)
+
+``` r
+M <- bb %>%
+  group_by(id) %>%
+  summarize(n = n()) %>%
+  filter(n == 1)
+mm <- as.vector(M$id) 
+bb %>%
+  filter(id %in% mm) %>%
+  group_by(correct, area_correct) %>%
+  summarize(n = n()) %>%
+  mutate(prop = n / sum(n))
+```
+
+    ## # A tibble: 4 x 4
+    ## # Groups:   correct [2]
+    ##   correct area_correct     n   prop
+    ##   <lgl>   <chr>        <int>  <dbl>
+    ## 1 F       fake           338 0.398 
+    ## 2 F       real           511 0.602 
+    ## 3 T       fake           389 0.0755
+    ## 4 T       real          4760 0.924

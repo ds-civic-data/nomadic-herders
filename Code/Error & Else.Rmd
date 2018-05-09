@@ -64,7 +64,7 @@ identifier <- data.frame(nl, id_) %>%
 ```
 ```{r}
 LTS_deidentified_1_ <- read_csv("~/nomadic-herders/data/LTS_deidentified (1).csv")
-In_4_ <- read_csv("~/nomadic-herders/LTSdata/In (4).csv")
+In_4_ <- read_csv("~/nomadic-herders/LTSdata/In (6).csv")
 LTS_yearmonth <-  LTS_deidentified_1_ %>%
   mutate(Date = ymd(Date)) %>%
   mutate(Year = year(Date), month = month(Date)) %>%
@@ -233,12 +233,14 @@ qqq <- bb %>%
 ```
 ```{r}
 qqq$code = factor(qqq$area, levels = c(62267, 84217, 46135, 67179, 23177, 62110))
+qqq
 qqq%>%
   ggplot(aes(x = year_month, y = n)) + geom_col(position = "dodge") +
   facet_wrap(~code, ncol = 2) +
   theme(axis.text.x = element_text(angle = 70, hjust = 1))+ 
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-    panel.background = element_blank(), axis.line = element_blank())
+    panel.background = element_blank(), axis.line = element_blank()) +
+    ggtitle("Top 6 Most Often Requested Area Codes") 
 ```
 
 ### Distribution of New Users
@@ -254,7 +256,12 @@ new_users <- bb %>%
   summarize(n = n()) 
 new_users %>%
   ggplot(aes(x = year_month, y = n)) + geom_col() +
-  theme(axis.text.x = element_text(angle = 40, hjust = 1))
+  theme(axis.text.x = element_text(angle = 40, hjust = 1)) +
+  ggtitle("Number of New Users Each Month") +
+  xlab("Year-Month") +
+  ylab("Number of New Users") +
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank())
+
 ```
 
 ### Distribution of proportion of new users each month
@@ -346,5 +353,115 @@ LTS_yearmonth %>%
   scale_fill_manual(values=c("mistyrose2", "lightskyblue", "lightcoral"))
 ```
 
+```{r}
+poor_guy <- bb %>% filter(id %in% nhb) %>% group_by(id) %>% summarize(n = n()) %>% arrange(desc(n)) %>% head(1) %>% select(id) %>% as.numeric()
+poor_guy
+```
 
+```{r}
+bb %>%
+  filter(id == poor_guy) %>%
+  group_by(correct, area_correct) %>%
+  summarize(n = n())
+```
 
+```{r}
+bb %>%
+  filter(id %in% nhb) %>%
+  group_by(id) %>%
+  mutate(min = min(Date), max = max(Date), period = max - min) %>%
+  group_by(period) %>%
+  summarize(n = n()) %>%
+  mutate(prop = n/sum(n))
+```
+
+```{r}
+bb %>%
+  mutate(all_correct = ifelse(correct == TRUE & area_correct == "real", T, F)) %>%
+  group_by(year_month, all_correct) %>%
+  distinct(id) %>%
+  summarize(n = n()) %>%
+  mutate(prop = n/sum(n)) %>%
+  ggplot(aes(x = year_month, y = prop, fill = all_correct)) + geom_col()
+```
+
+```{r}
+p <- LTS_yearmonth %>%
+  filter(Type == "in") %>%
+  group_by(id) %>%
+  summarize(n = n()) %>%
+  filter(n == 1) %>%
+  select(id)
+pp <- as.vector(p$id)
+LTS_yearmonth %>%
+  mutate(only_once = id %in% pp) %>%
+  group_by(year_month, only_once) %>%
+  distinct(id)  %>%
+  summarize(n = n()) %>%
+  mutate(prop = n/sum(n)) %>%
+  ggplot(aes(x = year_month, y = n, fill = only_once)) + geom_col()+
+  theme(axis.text.x = element_text(angle = 40, hjust = 1)) +
+  ggtitle("Distribution of Total Users Each Month") +
+  xlab("Year-Month") +
+  ylab("Number of Users") +
+  labs(fill= "Used only once") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank())
+```
+
+```{r}
+bb %>%
+  mutate(Messages = ifelse(correct == TRUE & area_correct == "real", "Correct Format, Correct Area Code", 
+                           ifelse(correct == TRUE & area_correct == "fake", "Incorrect Area Code, Correct Format", 
+                                  ifelse(correct == FALSE & area_correct == "real", "Incorrect Format, Correct Area Code", "Incorrect Area Code, Incorrect Format")))) %>%
+  group_by(year_month, Messages) %>%
+  summarize(n = n()) %>%
+  mutate(prop = n/sum(n)) %>%
+  filter(Messages != "Correct Format, Correct Area Code") %>%
+  ggplot(aes(year_month, prop, fill = Messages)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 40, hjust = 1)) +
+  scale_fill_manual(values=c("tan1", "cadetblue4", "lightcoral")) +
+  ggtitle("Proportion of Invalid Incoming Messages") +
+  xlab("Year-Month") +
+  ylab("Proportion") + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank())
+
+```
+
+```{r}
+bb %>%
+  mutate(Messages = ifelse(correct == TRUE & area_correct == "real", "Valid Messages", "Invalid Messages")) %>%
+  filter(Type == "in") %>%
+  group_by(year_month, Messages) %>%
+  summarize(n = n()) %>%
+  ggplot(aes(x = year_month, y = n, fill = Messages)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 40, hjust = 1)) +
+  ggtitle("Distribution of Incoming Messages Each Month") +
+  xlab("Year-Month") +
+  ylab("Number of Requests") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank())
+```
+
+```{r}
+bb %>%
+  group_by(year_month) %>%
+  summarize(n = n()) %>%
+  ggplot(aes(x = year_month, y = n)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 40, hjust = 1)) +
+  ggtitle("Number of Requests Each Month") +
+  xlab("Year-Month") +
+  ylab("Number of Requests") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank())
+```
+
+```{r}
+M <- bb %>%
+  group_by(id) %>%
+  summarize(n = n()) %>%
+  filter(n == 1)
+mm <- as.vector(M$id) 
+bb %>%
+  filter(id %in% mm) %>%
+  group_by(correct, area_correct) %>%
+  summarize(n = n()) %>%
+  mutate(prop = n / sum(n))
+```
