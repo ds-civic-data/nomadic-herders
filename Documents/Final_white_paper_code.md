@@ -1,4 +1,4 @@
-LTS-2 System: Exploratory Analysis of Service Usage Over Time and Space
+Final\_white\_paper\_code
 ================
 
 Abstract:
@@ -40,6 +40,12 @@ In analyzing the ways the system is used, we focused on three major areas. First
 
 ### Individual Users:
 
+``` r
+# load deidentified data
+
+LTS_data <- read_csv("~/nomadic-herders/LTSdata/LTS_deidentified (1).csv")
+```
+
     ## Warning: Missing column names filled in: 'X1' [1]
 
     ## Parsed with column specification:
@@ -52,10 +58,63 @@ In analyzing the ways the system is used, we focused on three major areas. First
     ##   Message = col_character()
     ## )
 
+``` r
+# wrangle data - get rid of unnecessary column
+
+LTS_data <- LTS_data %>%
+  select(-X1)
+
+# create incoming messages dataframe
+In <- LTS_data %>%
+  filter(Type == "in")
+
+# regexpression to pull out messages in correct/incorrect format
+correct_exp <- "^[0-9]{5}\\s+[0-9]{1}$"
+
+
+# create correct/incorrect column
+In$correct <- grepl(correct_exp,In$Message)
+
+
+# create area column for correct/incorrect
+In <- In %>%
+  mutate(area = str_extract(In$Message, "[0-9]{5}")) 
+
+# Is the area code correct?
+
+zip_data <- read_excel("~/nomadic-herders/LTSdata/Zip_extension_2016_2017.xlsx") %>% rename(`Zip code` = `Regional code`)
+zip_data2 <- read_excel("~/nomadic-herders/LTSdata/Zip_extension_2017_2018.xlsx") %>%
+  select("Sub-District", "Zip code", "Latitude", "Longitude") 
+ 
+
+Zip_Data <- bind_rows(zip_data, zip_data2) %>%
+  distinct(`Zip code`)
+
+area_vector <- as.vector(Zip_Data$`Zip code`)
+
+In <- In %>%
+  mutate(area_correct = if_else(In$area %in% area_vector, 'real', 'fake')) %>% mutate(area_correct = if_else(is.na(In$area), 'fake', area_correct))
+
+In %>% filter(area_correct == "real") %>%
+  summarise(n = n())
+```
+
     ## # A tibble: 1 x 1
     ##       n
     ##   <int>
     ## 1 56142
+
+``` r
+# separate message column into area code and request type - this probably only makes sense to do for correct messages
+Correct <- In %>%
+  filter(correct == "TRUE") %>%
+  separate(Message, c("Area", "request"), sep = ("(\\s{1,4}|\\.)"), extra = "drop")
+
+
+# Calculate number of unique users
+In %>% distinct(id) %>%
+  summarise(n = n())
+```
 
     ## # A tibble: 1 x 1
     ##       n
@@ -72,7 +131,47 @@ We began by characterizing the average user. To do this, we assumed that each te
 
 The above table shows the descriptive statistics of the distribution of the number of times individual users requested information. With a mean of 4.63 and median of 2, the distribution of the number of requests by individual users, suggesting that many of the system’s phone numbers request information only a few times.
 
-![](Final_White_Paper_files/figure-markdown_github/unnamed-chunk-2-1.png)
+``` r
+LTS_yearmonth <-  LTS_data %>%
+  mutate(Date = ymd(Date)) %>%
+  mutate(Year = year(Date), month = month(Date)) %>%
+  mutate(month = ifelse(nchar(as.character(month)) == 1, paste("0", sep = "", as.character(month)), as.character(month))) %>%
+  mutate(year_month = paste(as.character(Year), "-", month)) 
+
+p <- LTS_yearmonth %>%
+  filter(Type == "in") %>%
+  group_by(id) %>%
+  summarize(n = n()) %>%
+  filter(n == 1) %>%
+  select(id)
+pp <- as.vector(p$id)
+
+LTS_yearmonth %>%
+  mutate(only_once = id %in% pp) %>%
+  mutate(usage = ifelse(only_once == TRUE, "Only Once", "More Than Once")) %>%
+  group_by(year_month, usage) %>%
+  distinct(id)  %>%
+  summarize(n = n()) %>%
+  mutate(prop = n/sum(n)) %>%
+  mutate(only_once = usage) %>%
+  ggplot(aes(x = year_month, y = prop, fill = usage)) + geom_col()+
+  theme(axis.text.x = element_text(angle = 40, hjust = 1)) +
+ labs(title = "Proporiton of Users by Number of Information Requests", x = "Month", y = "Number of Users", fill = "Total") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank())
+```
+
+![](Final_white_paper_code_files/figure-markdown_github/unnamed-chunk-2-1.png)
+
+``` r
+LTS_yearmonth %>%
+  mutate(only_once = id %in% pp) %>%
+  mutate(usage = ifelse(only_once == TRUE, "Only Once", "More Than Once")) %>%
+  group_by(year_month, usage) %>%
+  distinct(id)  %>%
+  summarize(n = n()) %>%
+  mutate(prop = n/sum(n)) %>%
+  filter(usage == "Only Once") %>%
+  arrange(desc(prop))
+```
 
     ## # A tibble: 19 x 4
     ## # Groups:   year_month [19]
@@ -102,6 +201,14 @@ The above table shows the descriptive statistics of the distribution of the numb
 
 The graph above shows the monthly proportion of single-time versus multi-time users. Based on this distrubution, a significant proportion and consistent proportion of users appear to text into the LTS-2 system and then never request more information. The maximum proportion was in June 2016, at 40% with a minimum of 11% in June 2017. The peak in single-time users around November 2016 (37%) suggests an influx of new, single-time users, and is mirrored in a smaller peak around October/November 2017 (25 and 23% respetively). Any conclusion about seasonal usage is difficult given the newness of the LTS system, though the apparent trend seems to be towards fewer non-repeat users in the summer months (June, July, August, and September).
 
+``` r
+LTS_yearmonth%>%
+  filter(Type == "in") %>%
+  mutate(only_once = id %in% pp) %>%
+    mutate(usage = ifelse(only_once == TRUE, "Only Once", "More Than Once")) %>% group_by(usage) %>% distinct(id)  %>%
+     summarize(n = n())
+```
+
     ## # A tibble: 2 x 2
     ##   usage              n
     ##   <chr>          <int>
@@ -118,13 +225,45 @@ The graph above shows the monthly proportion of single-time versus multi-time us
 
 To have a sense for the actual number of users who only used the system once, we generated the above table, which shows that there is a significant number of people who requested information a single time.
 
-![](Final_White_Paper_files/figure-markdown_github/unnamed-chunk-4-1.png)
+``` r
+# Calculate the number of requests for each kind of information
+
+Correct %>% 
+  filter(request <4, request > 0) %>%
+  group_by(request) %>%
+  summarise(num = n()) %>%
+ggplot(aes(y = num, x = request)) + geom_col() + coord_flip() + labs(title = "Numbers of Requests by Information Type", x = "Type", y = "Number of Requests")
+```
+
+![](Final_white_paper_code_files/figure-markdown_github/unnamed-chunk-4-1.png)
 
 **Fig. 3** Counts of requests for each of the three types of information offered by the LTS-2 system represented by an integer between 1 and 3. 1 represents a request for a 1-3 day forecast, 2 represents a 4-6 day forecast, and 3 a pasture information.
 
 Users seem mostly interested in weather information. Of the approximately 52,000 correctly formatted messages (messages that contain only a five-digit area code, and a request code between 1 and 3), about 36,000 were for 1-3 day weather forecasts and 14,000 were for 4-6 day weather forecasts. In comparison, only about 1300 requests for pasture information, suggesting that weather information is the main type of information users are interested in.
 
-![](Final_White_Paper_files/figure-markdown_github/unnamed-chunk-5-1.png)
+``` r
+# create visualization of the number of area codes requested
+In %>%
+  group_by(id) %>%
+  distinct(area, .keep_all = TRUE) %>%
+  summarise(n = n()) %>%
+ ungroup() %>%
+  count(n) %>%
+  head(n = 7) %>%
+  mutate(n = as.character(n)) %>%
+  ggplot(aes(x = n, y = nn)) + geom_col() + labs(title = "Distribution of Users by Number of Area Codes Requested", y = "Users", x = "Number of Area Codes") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(),  axis.line = element_blank())
+```
+
+![](Final_white_paper_code_files/figure-markdown_github/unnamed-chunk-5-1.png)
+
+``` r
+In %>%
+  group_by(id) %>%
+  distinct(area, .keep_all = TRUE) %>%
+  summarise(n = n()) %>%
+ ungroup() %>%
+  count(n)
+```
 
     ## # A tibble: 33 x 2
     ##        n    nn
@@ -145,7 +284,36 @@ Users seem mostly interested in weather information. Of the approximately 52,000
 
 The above bar plot shows the distribution of the number of area codes for which users requested information. Most users only requested information for one area code (around 10,000) in their spand of their . Number of area codes drops off significantly after that, with about 2,500 users requesting 2. It’s difficult to know whether this pattern is at all related to the geographical location of users, because many users only queried the system a single time; however, using the shiny dashboard mapping geographical usage, it’s possible to gain some insight into the spatial distribution of users. A general examination of the dashboard shows that requests are concentrated in the northern parts of the country. Apart from several southern area codes that receive a significant number of requests, there are almost no southern locations that receive forecast requests.
 
-![](Final_White_Paper_files/figure-markdown_github/unnamed-chunk-6-1.png)
+``` r
+bb <- In %>%
+  mutate(Date = ymd(Date)) %>%
+  mutate(Year = year(Date), month = month(Date)) %>%
+  mutate(month = ifelse(nchar(as.character(month)) == 1, paste("0", sep = "", as.character(month)), as.character(month))) %>%
+  mutate(year_month = paste(as.character(Year), "-", month)) 
+
+pattern <- "^[0-9]{5}\\s+[0-9]{1}$"
+bb <- bb %>%
+  mutate(correct = grepl(pattern, Message))
+
+# Plot proportion of incorrectly formatted messages over time
+bb %>%
+  mutate(Messages = ifelse(correct == TRUE & area_correct == "real", "Correct Format, Correct Area Code", 
+                           ifelse(correct == TRUE & area_correct == "fake", "Incorrect Area Code, Correct Format", 
+                                  ifelse(correct == FALSE & area_correct == "real", "Incorrect Format, Correct Area Code", "Incorrect Area Code, Incorrect Format")))) %>%
+  group_by(year_month, Messages) %>%
+  summarize(n = n()) %>%
+  mutate(prop = n/sum(n)) %>%
+  filter(Messages != "Correct Format, Correct Area Code") %>%
+  ggplot(aes(year_month, prop, fill = Messages)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 40, hjust = 1)) +
+  scale_fill_manual(values=c("tan1", "cadetblue4", "lightcoral")) +
+  ggtitle("Proportion of Invalid Incoming Messages") +
+  xlab("Year-Month") +
+  ylab("Proportion") + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank())
+```
+
+![](Final_white_paper_code_files/figure-markdown_github/unnamed-chunk-6-1.png)
 
 **Fig. 5** Proportion of incoming messages that were incorrectly formatted and/or contained area codes that do not correspond real area codes.
 
@@ -159,6 +327,31 @@ General Usage Patterns:
 =======================
 
 To get a better understanding of the ways users enter and exit the system, and to understand aggregate usage patterns, we focused at temporal usage.
+
+``` r
+# create graph of churn rate
+
+total_use <- In %>%
+  mutate(month = month(Date), year = year(Date)) %>%
+  group_by(month, year) %>%
+  distinct(id, .keep_all = TRUE) %>%
+  summarise(total = n()) %>%
+  arrange(year)
+  
+
+last_use <- In %>% 
+  mutate(month = month(Date), year = year(Date)) %>%
+  group_by(id) %>%
+  arrange(month, year) %>%
+  slice(n()) %>%
+  ungroup() %>%
+  group_by(month, year) %>%
+  summarise(n = n()) %>%
+  arrange(year)
+
+left_join(last_use, total_use, by = c("year" = "year", "month" = "month")) %>%
+  mutate(churn = n/total) %>% arrange(desc(churn))
+```
 
     ## # A tibble: 19 x 5
     ## # Groups:   month [12]
@@ -184,11 +377,31 @@ To get a better understanding of the ways users enter and exit the system, and t
     ## 18  3.00  2017   314  1080 0.291
     ## 19  7.00  2017    98   348 0.282
 
-![](Final_White_Paper_files/figure-markdown_github/unnamed-chunk-7-1.png)
+``` r
+a <- date("2016-12-01")
+b <- date("2016-06-01")
+e <- date("2017-07-01")
+d <- date("2017-10-01")
+
+left_join(last_use, total_use, by = c("year" = "year", "month" = "month")) %>%
+  mutate(churn = n/total) %>%
+  ungroup() %>%
+  filter(!row_number() == n()) %>%
+  mutate(date = make_date(year = year, month = month)) %>%
+ggplot(aes(x = date, y = churn)) + geom_line() + labs(title = "Monthly Churn Rate June 2016 - November 2017", y = "Rate", x = "Month") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(),  axis.line = element_line(colour = "black")) + annotate("text", x = a, y = 1, label = c("December")) +
+  annotate("text", x = b, y = 0.82, label = c("June")) + annotate("text", x = e, y = 0.33, label = c("July")) +
+annotate("text", x = d, y = 0.62, label = c("November"))
+```
+
+![](Final_white_paper_code_files/figure-markdown_github/unnamed-chunk-7-1.png)
 
 **Fig. 6** Timeseries plot of the monthly churn rate, which is a measure of turn over in users of a given system.
 
 Since the dataset covers a relatively short period of time, we calculated monthly churn rates by dividing the number of users who used the system for the last time in a given month by the total number of users that month. The timeplot below shows this churn rate over time. Since we have no data for January 2018, December 2017 was excluded in the analysis. The system’s churn rate was relatively high, indicating that people are constantly entering and exiting the system. 2016 had consistently high churn rates, with a range between 60% and 80% between June and November of 2016, peaking in December at 96%, which was the highest churn rate throughout the year. Relative to 2016, 2017 saw low churn rates, with a range from 28% in July to 59% in October.
+
+``` r
+Out <- read_csv("~/nomadic-herders/data/out_LTS_data.csv")
+```
 
     ## Warning: Missing column names filled in: 'X1' [1]
 
@@ -205,13 +418,46 @@ Since the dataset covers a relatively short period of time, we calculated monthl
     ##   weather_eng = col_character()
     ## )
 
-![](Final_White_Paper_files/figure-markdown_github/unnamed-chunk-8-1.png)
+``` r
+Out %>% mutate(month = month(Date), year = year(Date)) %>%
+  filter(!is.na(weather_eng)) %>%
+  group_by(month, year, weather_eng) %>%
+  summarise(n = n()) %>%
+  ungroup() %>%
+  mutate(date = make_date(year = year, month = month)) %>%
+  ggplot(aes(x = date, y = n, fill = weather_eng)) + geom_col() +
+  labs(title = "Outgoing Messages by Weather Type", x = "Month", y ="Messages", fill = "Weather Type") 
+```
+
+![](Final_white_paper_code_files/figure-markdown_github/unnamed-chunk-8-1.png)
 
 **Fig. 7** Bar plot of counts of monthly outgoing messages coded for forecasted meteoroligical conditions.
 
 The above plot shows shows the distribution of weather types in outgoing forecasts by month. This graph uses the type weather forecasted - clouds, rain, snow, or sun - as an indicator of Mongolian weather patterns during a given month. While this provides only a rough sense of actual weather patterns, there does appear to noticeable seasonal patterns in types of weather forecasts, with snow forecasted in late fall into winter and early spring, and rain in spring/summer. Usage patterns appear to rise and fall with the appearance of snow, increasing in winter and dipping in summer. June 2016 has relatively high usage, though, is likely an outlier because the system started operation that month.
 
-![](Final_White_Paper_files/figure-markdown_github/unnamed-chunk-9-1.png)
+``` r
+new_users <- bb %>%
+  group_by(id) %>%
+  summarize(min = min(Date)) %>%
+  mutate(Year = year(min), month = month(min)) %>%
+  group_by(Year, month) %>%
+  summarize(n = n()) %>%
+  mutate(Date = make_date(month = month, year = Year))
+
+# graph number of requests each month
+bb %>%
+  group_by(Year, month) %>%
+  summarize(n = n()) %>%
+  mutate(Date = make_date(month = month, year = Year)) %>%
+  ggplot(aes(x = Date, y = n, color = "dark blue")) + geom_line() + geom_line(data = new_users, aes(x=Date, y=n, color = "red")) +
+  theme(axis.text.x = element_text(angle = 40, hjust = 1)) +
+  ggtitle("Number of New Users and Information Requests") +
+  xlab("Date") +
+  ylab("Count") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), axis.line = element_line("black")) + scale_color_discrete(name = "Number of", labels = c("Requests", "New Users"))
+```
+
+![](Final_white_paper_code_files/figure-markdown_github/unnamed-chunk-9-1.png)
 
 **Fig. 8** Time series plot of the number of new users per month and number of requests per month.
 

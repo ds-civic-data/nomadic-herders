@@ -1,10 +1,10 @@
 ---
-title: "LTS-2 System: Exploratory Analysis of Service Usage Over Time and Space"
+title: "Final_white_paper_code"
 output: github_document
 ---
 
-```{r global_options, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(rex)
 library(readr)
