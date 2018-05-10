@@ -9,14 +9,14 @@ The goal of this project was to analyze spatio-temporal usage of Mercycorp Mongo
 The System:
 -----------
 
-The LTS-2 is an SMS information system designed to help Mongolian Nomadic herders to improve lives outcomes. The system works by providing weather forecast and pasture information to herders by text message. Anyone with a Mongolian phone number can text into the system, though the information provided is tailored for nomadic herders. In particular, the system aims to reduce livestock deaths due to severe weather, and ensure long-term sustainability of herding by reducing overgrazing.
+The LTS-2 system is an SMS information service designed to help Mongolian Nomadic herders to improve lives outcomes. The service works by providing weather forecast and pasture information to herders by text message. Anyone with a Mongolian phone number can text into the system, though the information provided is tailored for nomadic herders. In particular, the system aims to reduce livestock deaths due to severe weather, and ensure long-term sustainability of herding by reducing overgrazing.
 
 Users can request weather or pasture information via text. One to three, and four day forecasts are available, in addition to pasture information pulled from the Livestock Early Warning system run by Texas A&M University. To receive a text message response, users must request information for a specific *bagh* (Mongolian subdistrict). The data we analyzed is comprised of all the incoming and outgoing texts associated with the LTS-2 system. Incoming texts consist of a *bagh*-level area code and an integer from 1-3 indicating request type. 1 and 2 represent one- to three-day and four- to six-day forecast respectively, while 3 represents a request for pasture information. The formatting of an incoming text must conform to fairly strict rules for a user to receive a response. The text must begin with a 5 digit bagh area code, followed by at least one space and the request type. Any change in formatting, or addition of other information will mean a user does not receive a response. In general, outgoing weather forecasts contain the starting date of the forecast interval, one of four predicted meteorological conditions (sun, clouds, rain, snow). When available, higher resolution forecasts that include high and low temperature are provided.
 
 The Data:
 ---------
 
-As described above the system is comprised of incoming and outgoing messages in the system. Due to the system’s cataloging method, the dataset does not contain a response for every request, or a request for every response. The first is due to user error. Improperly formatted messages are catalogued but do not receive a response. The second, is a system error. In the dataset, these errors appear to be messages sent to phone numbers that never sent requests for information; however, these messages are due to transcription errors in the system’s data collection method, and no actual messages were sent out. An update to the system in the fall of 2016 mostly solved the problem. These phantom messages appear only infrequently after September 2016.
+As described above the system is comprised of incoming and outgoing messages in the system. Due to the system’s cataloging method, the dataset does not contain a response for every request, or a request for every response. The first is due to user error. Improperly formatted messages are catalogued but do not receive a response. The second, is a system error. In the dataset, outgoing messages sent to phantom phone numbers appear to be messages sent to phone numbers that never sent requests for information; however, these phantom messages are actually due to transcription errors in the system’s data collection method. No messages were were sent out. An update to the system in the fall of 2016 mostly solved the problem. These phantom messages appear only infrequently after September 2016.
 
 The raw data we analyzed contained 125,000 observations spanning from June of 2016 to December of 2018. Observations were of individual messages, either ingoing and outgoing, and contained five variables: telephone number, date, time, message, and message type (incoming/outgoing). Since telephone numbers are traceable to individuals, we replace telephone numbers with random unique identifiers. There are a roughly equivalent number of incoming and outgoing messages, with 61,000 incoming messages and 63,000 outgoing.
 
@@ -121,7 +121,7 @@ In %>% distinct(id) %>%
     ##   <int>
     ## 1 13239
 
-We began by characterizing the average user. In total, 13,239 different users requested information from the system between June 2016 and December 2017. The majority of these users requested information relatively few times.
+We began by characterizing the average user. To do this, we assumed that each telephone number corresponds to an individual users, and that individual users did not switch telephone numbers or swap phones. In total, 13,239 different telephone numbers, which we assigned random unique identifiers, requested information from the system between June 2016 and December 2017. The majority of these users requested information relatively few times.
 
 | Mean | Median | Min | Max |
 |------|--------|-----|-----|
@@ -221,7 +221,7 @@ LTS_yearmonth%>%
 | Once           | 5998            |
 | More Than Once | 7241            |
 
-**Table 3** Table of the number users who either requested information one time or more than one time compared to the total number users.
+**Table 2** Table of the number users who either requested information one time or more than one time compared to the total number users.
 
 To have a sense for the actual number of users who only used the system once, we generated the above table, which shows that there is a significant number of people who requested information a single time.
 
@@ -321,14 +321,12 @@ The graph above shows the proportions of invalid messages each month, which are 
 
 Users were creative in their formatting of messages. Incorrect messages involved anything from requests for multiple types of information at a time or multiple area codes at a time, to entire sentences describing the information a user wanted. Given the relatively high proportion of incorrectly formatted messages over time, it may be helpful for the service to respond with formatting instructions to any unreadable messages. Currently, incorrectly formatted messages do not receive a response, so providing a response to incorrectly formatted messages may improve users’ interactions with the system.
 
-Looking at the ways individual users queried the system, a number of trends stand out. The first, given a mean 4.63 requests and a median of 2 requests per unique id, is that most users used the system a small number of times. Second, many users only query the system a single time, with monthly proportions of single-time users ranging between 11 and 40% between June 2016 and December 2017. Additionally, we found the majority of users only request information for a single area code. This observation may in part be due to the fact that many users only request information a single time. Finally, we found that incorrectly formatting message is a common user error, and is consistent over time. Focusing attention on improving user understanding of the system may improve peoples' experience with the system.
+Analyzing the previous vizualizations and tables describing the ways individual users queried the system, a number of trends stand out. The first, given a mean 4.63 requests and a median of 2 requests per unique id, is that most users used the system a small number of times. Second, many users only query the system a single time, with monthly proportions of single-time users ranging between 11 and 40% between June 2016 and December 2017. Additionally, we found the majority of users only request information for a single area code. This observation may in part be due to the fact that many users only request information a single time. Finally, we found that incorrectly formatting message is a common user error, and is consistent over time. Focusing attention on improving user understanding of the system may improve peoples' experience with the system.
 
 General Usage Patterns:
 =======================
 
 To get a better understanding of the ways users enter and exit the system, and to understand aggregate usage patterns, we focused at temporal usage.
-
-Since the dataset covers a relatively short period of time, we calculated monthly churn rates by dividing the number of users who used the system for the last time in a given month by the total number of users that month. The timeplot below shows this churn rate over time. Since we have no data for January 2018, December 2017 was excluded in the analysis.
 
 ``` r
 # create graph of churn rate
@@ -395,9 +393,9 @@ ggplot(aes(x = date, y = churn)) + geom_line() + labs(title = "Monthly Churn Rat
 annotate("text", x = d, y = 0.62, label = c("November"))
 ```
 
-![](Final_White_Paper_files/figure-markdown_github/unnamed-chunk-7-1.png)
+![](Final_White_Paper_files/figure-markdown_github/unnamed-chunk-7-1.png) **Fig. 6** Timeseries plot of the monthly churn rate, which is a measure of turn over in users of a given system.
 
-The system’s churn rate was relatively high, indicating that people are constantly entering and exiting the system. 2016 had consistently high churn rates, with a range between 60% and 80% between June and November of 2016, peaking in December at 96%, which was the highest churn rate throughout the year. Relative to 2016, 2017 saw low churn rates, with a range from 28% in July to 59% in October.
+Since the dataset covers a relatively short period of time, we calculated monthly churn rates by dividing the number of users who used the system for the last time in a given month by the total number of users that month. The timeplot below shows this churn rate over time. Since we have no data for January 2018, December 2017 was excluded in the analysis. The system’s churn rate was relatively high, indicating that people are constantly entering and exiting the system. 2016 had consistently high churn rates, with a range between 60% and 80% between June and November of 2016, peaking in December at 96%, which was the highest churn rate throughout the year. Relative to 2016, 2017 saw low churn rates, with a range from 28% in July to 59% in October.
 
 ``` r
 Out <- read_csv("~/nomadic-herders/data/out_LTS_data.csv")
@@ -429,49 +427,37 @@ Out %>% mutate(month = month(Date), year = year(Date)) %>%
   labs(title = "Outgoing Messages by Weather Type", x = "Month", y ="Messages", fill = "Weather Type") 
 ```
 
-![](Final_White_Paper_files/figure-markdown_github/unnamed-chunk-8-1.png)
+![](Final_White_Paper_files/figure-markdown_github/unnamed-chunk-8-1.png) **Fig. 7** Bar plot of counts of monthly outgoing messages coded for forecasted meteoroligical conditions.
 
 The above plot shows shows the distribution of weather types in outgoing forecasts by month. This graph uses the type weather forecasted - clouds, rain, snow, or sun - as an indicator of Mongolian weather patterns during a given month. While this provides only a rough sense of actual weather patterns, there does appear to noticeable seasonal patterns in types of weather forecasts, with snow forecasted in late fall into winter and early spring, and rain in spring/summer. Usage patterns appear to rise and fall with the appearance of snow, increasing in winter and dipping in summer. June 2016 has relatively high usage, though, is likely an outlier because the system started operation that month.
 
 ``` r
-# graph number of new users over time
 new_users <- bb %>%
   group_by(id) %>%
   summarize(min = min(Date)) %>%
   mutate(Year = year(min), month = month(min)) %>%
-  mutate(month = ifelse(nchar(as.character(month)) == 1, paste("0", sep = "", as.character(month)), as.character(month))) %>%
-  mutate(year_month = paste(as.character(Year), "-", month))%>%
-  group_by(year_month) %>%
-  summarize(n = n()) 
-new_users %>%
-  ggplot(aes(x = year_month, y = n)) + geom_col() +
+  group_by(Year, month) %>%
+  summarize(n = n()) %>%
+  mutate(Date = make_date(month = month, year = Year))
+
+# graph number of requests each month
+bb %>%
+  group_by(Year, month) %>%
+  summarize(n = n()) %>%
+  mutate(Date = make_date(month = month, year = Year)) %>%
+  ggplot(aes(x = Date, y = n, color = "dark blue")) + geom_line() + geom_line(data = new_users, aes(x=Date, y=n, color = "red")) +
   theme(axis.text.x = element_text(angle = 40, hjust = 1)) +
-  ggtitle("Number of New Users Each Month") +
-  xlab("Year-Month") +
-  ylab("Number of New Users") +
-    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank())
+  ggtitle("Number of New Users and Information Requests") +
+  xlab("Date") +
+  ylab("Count") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), axis.line = element_line("black")) + scale_color_discrete(name = "Number of", labels = c("Requests", "New Users"))
 ```
 
 ![](Final_White_Paper_files/figure-markdown_github/unnamed-chunk-9-1.png)
 
-Mirroring the above graph of new users per month above (fig \#), the number of requests for information directed at the service decreased over time, again with a slight uptick around late fall and winter. The number of messages per month shows a more substantial drop in usage around summer time than number of new users. Still, the plots seem to map fairly well onto each other, as well as onto the above plot of the total number of users per month over time (fig \#). From this we conclude that there may be a trend in usage over time, but the time frame is too short to determine what processes might be behind that trend.
+**Fig. 8** Time series plot of the number of new users per month and number of requests per month.
 
-``` r
-# graph number of requests each month
-bb %>%
-  group_by(year_month) %>%
-  summarize(n = n()) %>%
-  ggplot(aes(x = year_month, y = n)) + geom_col() +
-  theme(axis.text.x = element_text(angle = 40, hjust = 1)) +
-  ggtitle("Number of Requests Each Month") +
-  xlab("Year-Month") +
-  ylab("Number of Requests") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank())
-```
-
-![](Final_White_Paper_files/figure-markdown_github/unnamed-chunk-10-1.png)
-
-Mirroring the above graph of new users per month above (fig \#), the number of requests for information directed at the service decreased over time, again with a slight uptick around late fall and winter. The number of messages per month shows a more substantial drop in usage around summer time than number of new users. Still, the plots seem to map fairly well onto each other, as well as onto the above plot of the total number of users per month over time (fig \#). From this we conclude that there may be a trend in usage over time, but the time frame is too short to determine what processes might be behind that trend.
+The above time series of new users per month , the number of requests for information directed at the service decreased over time, again with a slight uptick around October, continuing until December and dropping again in January and Febrary. The number of messages per month shows a more substantial drop in usage around summer time than number of new users, . Still, the plots seem to map fairly well onto each other, as well as onto the above plot of the total number of users per month over time (fig \#). From this we conclude that there may be a trend in usage over time, but the time frame is too short to determine what processes might be behind that trend.
 
 We expected to see a seasonal cycle in the usage of the LTS-2 system due to the seasonal nature of nomadic herding. The LTS-2 system experienced a usage spike during the winter of 2016. However, while there was also an uptick in requests during the winter of 2017, it was of a significantly smaller magnitude. Our plot of requests per month (fig \#) and number of users per month (fig \#) above shows that usage during the summer months seems fairly consistent, and low from 2016 to 2017. Though it's difficult to discern whether there is a seasonal pattern in usage, there does appear to be a some relationship between snow and number of requests. Our weather analysis relied on the forecast information contained within the LTS outgoing messages, so we were only able look at weather patterns at low-resolution. Snow may be a proxy for cold weather, so future analysis should look at the effects of storms versus cold weather on system usage.
 
