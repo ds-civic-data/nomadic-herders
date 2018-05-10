@@ -132,46 +132,112 @@ We began by characterizing the average user. In total, 13,239 different users re
 The above table shows the descriptive statistics of the distribution of the number of times individual users requested information. With a mean of 4.63 and median of 2, the distribution of the number of requests by individual users, suggesting that many of the system’s phone numbers request information only a few times.
 
 ``` r
-# Calcaulate the number of requests for each kind of information
+LTS_yearmonth <-  LTS_data %>%
+  mutate(Date = ymd(Date)) %>%
+  mutate(Year = year(Date), month = month(Date)) %>%
+  mutate(month = ifelse(nchar(as.character(month)) == 1, paste("0", sep = "", as.character(month)), as.character(month))) %>%
+  mutate(year_month = paste(as.character(Year), "-", month)) 
 
-Correct %>% 
-  filter(request <4, request > 0) %>%
-  group_by(request) %>%
-  summarise(num = n())
+p <- LTS_yearmonth %>%
+  filter(Type == "in") %>%
+  group_by(id) %>%
+  summarize(n = n()) %>%
+  filter(n == 1) %>%
+  select(id)
+pp <- as.vector(p$id)
+
+LTS_yearmonth %>%
+  mutate(only_once = id %in% pp) %>%
+  mutate(usage = ifelse(only_once == TRUE, "Only Once", "More Than Once")) %>%
+  group_by(year_month, usage) %>%
+  distinct(id)  %>%
+  summarize(n = n()) %>%
+  mutate(prop = n/sum(n)) %>%
+  mutate(only_once = usage) %>%
+  ggplot(aes(x = year_month, y = prop, fill = usage)) + geom_col()+
+  theme(axis.text.x = element_text(angle = 40, hjust = 1)) +
+ labs(title = "Proporiton of Users by Number of Information Requests", x = "Month", y = "Number of Users", fill = "Total") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank())
 ```
 
-    ## # A tibble: 3 x 2
-    ##   request   num
-    ##   <chr>   <int>
-    ## 1 1       36188
-    ## 2 2       14628
-    ## 3 3        1349
+![](Final_White_Paper_files/figure-markdown_github/unnamed-chunk-2-1.png)
 
 ``` r
-# Number of users asking for each kind of request
+LTS_yearmonth %>%
+  mutate(only_once = id %in% pp) %>%
+  mutate(usage = ifelse(only_once == TRUE, "Only Once", "More Than Once")) %>%
+  group_by(year_month, usage) %>%
+  distinct(id)  %>%
+  summarize(n = n()) %>%
+  mutate(prop = n/sum(n)) %>%
+  filter(usage == "Only Once") %>%
+  arrange(desc(prop))
+```
+
+    ## # A tibble: 19 x 4
+    ## # Groups:   year_month [19]
+    ##    year_month usage         n  prop
+    ##    <chr>      <chr>     <int> <dbl>
+    ##  1 2016 - 06  Only Once  1828 0.403
+    ##  2 2016 - 11  Only Once   905 0.372
+    ##  3 2016 - 12  Only Once  1007 0.321
+    ##  4 2017 - 10  Only Once   194 0.253
+    ##  5 2017 - 11  Only Once   151 0.232
+    ##  6 2016 - 10  Only Once   162 0.229
+    ##  7 2016 - 07  Only Once   321 0.225
+    ##  8 2017 - 01  Only Once   325 0.204
+    ##  9 2017 - 12  Only Once    79 0.181
+    ## 10 2017 - 02  Only Once   176 0.169
+    ## 11 2016 - 09  Only Once   170 0.167
+    ## 12 2017 - 04  Only Once   199 0.167
+    ## 13 2017 - 05  Only Once   120 0.140
+    ## 14 2017 - 09  Only Once    56 0.135
+    ## 15 2017 - 03  Only Once   141 0.129
+    ## 16 2016 - 08  Only Once   119 0.126
+    ## 17 2017 - 07  Only Once    43 0.122
+    ## 18 2017 - 08  Only Once    45 0.120
+    ## 19 2017 - 06  Only Once    49 0.111
+
+**Fig. 2** This bar plot represents the distribution of the proportion of unique users each month, separated into single-time users (blue) and users who requested information more than one time (red). Note that users counted in the red bar in one month may also be counted in the red bars in subsequent months.
+
+The graph above shows the monthly proportion of single-time versus multi-time users. Based on this distrubution, a significant proportion and consistent proportion of users appear to text into the LTS-2 system and then never request more information. The maximum proportion was in June 2016, at 40% with a minimum of 11% in June 2017. The peak in single-time users around November 2016 (37%) suggests an influx of new, single-time users, and is mirrored in a smaller peak around October/November 2017 (25 and 23% respetively). Any conclusion about seasonal usage is difficult given the newness of the LTS system, though the apparent trend seems to be towards fewer non-repeat users in the summer months (June, July, August, and September).
+
+``` r
+LTS_yearmonth%>%
+  filter(Type == "in") %>%
+  mutate(only_once = id %in% pp) %>%
+    mutate(usage = ifelse(only_once == TRUE, "Only Once", "More Than Once")) %>% group_by(usage) %>% distinct(id)  %>%
+     summarize(n = n())
+```
+
+    ## # A tibble: 2 x 2
+    ##   usage              n
+    ##   <chr>          <int>
+    ## 1 More Than Once  7241
+    ## 2 Only Once       5998
+
+| Usage Type     | Number of Users |
+|----------------|-----------------|
+| Total          | 13239           |
+| Once           | 5998            |
+| More Than Once | 7241            |
+
+**Table 3** Table of the number users who either requested information one time or more than one time compared to the total number users.
+
+To have a sense for the actual number of users who only used the system once, we generated the above table, which shows that there is a significant number of people who requested information a single time.
+
+``` r
+# Calculate the number of requests for each kind of information
 
 Correct %>% 
   filter(request <4, request > 0) %>%
-  distinct(id, .keep_all = TRUE) %>%
   group_by(request) %>%
   summarise(num = n()) %>%
-  arrange(desc(num))
+ggplot(aes(y = num, x = request)) + geom_col() + coord_flip() + labs(title = "Numbers of Requests by Information Type", x = "Type", y = "Number of Requests")
 ```
 
-    ## # A tibble: 3 x 2
-    ##   request   num
-    ##   <chr>   <int>
-    ## 1 1        8650
-    ## 2 2        2938
-    ## 3 3         288
+![](Final_White_Paper_files/figure-markdown_github/unnamed-chunk-4-1.png)
 
-| Type of Request  | Number of Requests |
-|------------------|--------------------|
-| 1-3 Day Forecast | 36,188             |
-| 4-6 Day Forecast | 14,628             |
-| Pasture          | 1,349              |
-
-**Table 2** Total counts of requests for each of the three types of information offered by the LTS-2 system: 1-3 day forecast, 4-6 day forecast, and pasture information.
+**Fig. 3** Counts of requests for each of the three types of information offered by the LTS-2 system represented by an integer between 1 and 3. 1 represents a request for a 1-3 day forecast, 2 represents a 4-6 day forecast, and 3 a pasture information.
 
 Users seem mostly interested in weather information. Of the approximately 52,000 correctly formatted messages (messages that contain only a five-digit area code, and a request code between 1 and 3), about 36,000 were for 1-3 day weather forecasts and 14,000 were for 4-6 day weather forecasts. In comparison, only about 1300 requests for pasture information, suggesting that weather information is the main type of information users are interested in.
 
@@ -188,7 +254,7 @@ In %>%
   ggplot(aes(x = n, y = nn)) + geom_col() + labs(title = "Distribution of Users by Number of Area Codes Requested", y = "Users", x = "Number of Area Codes") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(),  axis.line = element_blank())
 ```
 
-![](Final_White_Paper_files/figure-markdown_github/unnamed-chunk-3-1.png)
+![](Final_White_Paper_files/figure-markdown_github/unnamed-chunk-5-1.png)
 
 ``` r
 In %>%
@@ -214,9 +280,9 @@ In %>%
     ## 10    10     4
     ## # ... with 23 more rows
 
-**Fig. 2** The distribution of number of area codes requested by service users. Most users only requested information about a single area code in the course of their use of the system.
+**Fig. 4** The distribution of number of area codes requested by service users. Most users only requested information about a single area code in the course of their use of the system.
 
-The above bar plot shows the distribution of the number of area codes for which users requested information. Most users only requested information for one area code (around 10,000) in their spand of their . Number of area codes drops off significantly after that, with about 2,500 users requesting 2. It’s difficult to know whether this pattern is at all related to the geographical location of users, because many users only queried the system a single time; however, using the shiny dashboard mapping geographical usage, it’s possible to gain some insight into the spatial distribution of users.
+The above bar plot shows the distribution of the number of area codes for which users requested information. Most users only requested information for one area code (around 10,000) in their spand of their . Number of area codes drops off significantly after that, with about 2,500 users requesting 2. It’s difficult to know whether this pattern is at all related to the geographical location of users, because many users only queried the system a single time; however, using the shiny dashboard mapping geographical usage, it’s possible to gain some insight into the spatial distribution of users. A general examination of the dashboard shows that requests are concentrated in the northern parts of the country. Apart from several southern area codes that receive a significant number of requests, there are almost no southern locations that receive forecast requests.
 
 ``` r
 bb <- In %>%
@@ -247,54 +313,20 @@ bb %>%
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank())
 ```
 
-![](Final_White_Paper_files/figure-markdown_github/unnamed-chunk-4-1.png)
+![](Final_White_Paper_files/figure-markdown_github/unnamed-chunk-6-1.png)
 
-**Fig. 3** Proportion of incoming messages that were incorrectly formatted and/or contained area codes that do not correspond real area codes.
+**Fig. 5** Proportion of incoming messages that were incorrectly formatted and/or contained area codes that do not correspond real area codes.
 
 The graph above shows the proportions of invalid messages each month, which are caused by incorrectly formatting and/or area codes that do not correspond to actual places. We see an overall decreasing pattern in the total proportion of invalid requests. The proportion of messages with incorrect formatting does not change much over time, while the use of non-existing area codes in messages tends to decrease. Incorrect formatting appears to be the most common and consistent type of user errors.
 
 Users were creative in their formatting of messages. Incorrect messages involved anything from requests for multiple types of information at a time or multiple area codes at a time, to entire sentences describing the information a user wanted. Given the relatively high proportion of incorrectly formatted messages over time, it may be helpful for the service to respond with formatting instructions to any unreadable messages. Currently, incorrectly formatted messages do not receive a response, so providing a response to incorrectly formatted messages may improve users’ interactions with the system.
 
-``` r
-LTS_yearmonth <-  LTS_data %>%
-  mutate(Date = ymd(Date)) %>%
-  mutate(Year = year(Date), month = month(Date)) %>%
-  mutate(month = ifelse(nchar(as.character(month)) == 1, paste("0", sep = "", as.character(month)), as.character(month))) %>%
-  mutate(year_month = paste(as.character(Year), "-", month)) 
+Looking at the ways individual users queried the system, a number of trends stand out. The first, given a mean 4.63 requests and a median of 2 requests per unique id, is that most users used the system a small number of times. Second, many users only query the system a single time, with monthly proportions of single-time users ranging between 11 and 40% between June 2016 and December 2017. Additionally, we found the majority of users only request information for a single area code. This observation may in part be due to the fact that many users only request information a single time. Finally, we found that incorrectly formatting message is a common user error, and is consistent over time. Focusing attention on improving user understanding of the system may improve peoples' experience with the system.
 
-p <- LTS_yearmonth %>%
-  filter(Type == "in") %>%
-  group_by(id) %>%
-  summarize(n = n()) %>%
-  filter(n == 1) %>%
-  select(id)
-pp <- as.vector(p$id)
+General Usage Patterns:
+=======================
 
-LTS_yearmonth %>%
-  mutate(only_once = id %in% pp) %>%
-  mutate(usage = ifelse(only_once == TRUE, "Only Once", "Once or More")) %>%
-  group_by(year_month, usage) %>%
-  distinct(id)  %>%
-  summarize(n = n()) %>%
-  mutate(prop = n/sum(n)) %>%
-  mutate(only_once = usage) %>%
-  ggplot(aes(x = year_month, y = n, fill = usage)) + geom_col()+
-  theme(axis.text.x = element_text(angle = 40, hjust = 1)) +
- labs(title = "Distribution of Users by ", x = "Month", y = "Number of Users", fill = "Number of Requests") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank())
-```
-
-![](Final_White_Paper_files/figure-markdown_github/unnamed-chunk-5-1.png)
-
-**Fig. 4** The dis
-
-The graph above shows the total number of users that texted into the system each month, along with the proportion of users that only ever text into the system once. Clearly, a significant portion of users text into the LTS-2 system and then never use it again. Any conclusion about seasonal usage is difficult given the newness of the LTS system, though the apparent trend seems to lower usage in the summer months (June, July, August, and September). Three months, in particular, stand out both as having the most number of users and a large proportion of one-time users: June, November, and December 2016.
-
-Looking at the ways individual users queried the system, two trends stand out. The first is that most users used the system a small number of times. The second is that the number of users is inconsistent over time.
-
-*General Patterns in Usage:*
-============================
-
-To get a better understanding of the ways users enter and exit the system, and to understand aggregate usage patterns, we looked at spatio-temporal usage.
+To get a better understanding of the ways users enter and exit the system, and to understand aggregate usage patterns, we focused at temporal usage.
 
 Since the dataset covers a relatively short period of time, we calculated monthly churn rates by dividing the number of users who used the system for the last time in a given month by the total number of users that month. The timeplot below shows this churn rate over time. Since we have no data for January 2018, December 2017 was excluded in the analysis.
 
@@ -363,7 +395,7 @@ ggplot(aes(x = date, y = churn)) + geom_line() + labs(title = "Monthly Churn Rat
 annotate("text", x = d, y = 0.62, label = c("November"))
 ```
 
-![](Final_White_Paper_files/figure-markdown_github/unnamed-chunk-6-1.png)
+![](Final_White_Paper_files/figure-markdown_github/unnamed-chunk-7-1.png)
 
 The system’s churn rate was relatively high, indicating that people are constantly entering and exiting the system. 2016 had consistently high churn rates, with a range between 60% and 80% between June and November of 2016, peaking in December at 96%, which was the highest churn rate throughout the year. Relative to 2016, 2017 saw low churn rates, with a range from 28% in July to 59% in October.
 
@@ -397,7 +429,7 @@ Out %>% mutate(month = month(Date), year = year(Date)) %>%
   labs(title = "Outgoing Messages by Weather Type", x = "Month", y ="Messages", fill = "Weather Type") 
 ```
 
-![](Final_White_Paper_files/figure-markdown_github/unnamed-chunk-7-1.png)
+![](Final_White_Paper_files/figure-markdown_github/unnamed-chunk-8-1.png)
 
 The above plot shows shows the distribution of weather types in outgoing forecasts by month. This graph uses the type weather forecasted - clouds, rain, snow, or sun - as an indicator of Mongolian weather patterns during a given month. While this provides only a rough sense of actual weather patterns, there does appear to noticeable seasonal patterns in types of weather forecasts, with snow forecasted in late fall into winter and early spring, and rain in spring/summer. Usage patterns appear to rise and fall with the appearance of snow, increasing in winter and dipping in summer. June 2016 has relatively high usage, though, is likely an outlier because the system started operation that month.
 
@@ -420,7 +452,7 @@ new_users %>%
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank())
 ```
 
-![](Final_White_Paper_files/figure-markdown_github/unnamed-chunk-8-1.png)
+![](Final_White_Paper_files/figure-markdown_github/unnamed-chunk-9-1.png)
 
 Mirroring the above graph of new users per month above (fig \#), the number of requests for information directed at the service decreased over time, again with a slight uptick around late fall and winter. The number of messages per month shows a more substantial drop in usage around summer time than number of new users. Still, the plots seem to map fairly well onto each other, as well as onto the above plot of the total number of users per month over time (fig \#). From this we conclude that there may be a trend in usage over time, but the time frame is too short to determine what processes might be behind that trend.
 
@@ -437,7 +469,7 @@ bb %>%
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank())
 ```
 
-![](Final_White_Paper_files/figure-markdown_github/unnamed-chunk-9-1.png)
+![](Final_White_Paper_files/figure-markdown_github/unnamed-chunk-10-1.png)
 
 Mirroring the above graph of new users per month above (fig \#), the number of requests for information directed at the service decreased over time, again with a slight uptick around late fall and winter. The number of messages per month shows a more substantial drop in usage around summer time than number of new users. Still, the plots seem to map fairly well onto each other, as well as onto the above plot of the total number of users per month over time (fig \#). From this we conclude that there may be a trend in usage over time, but the time frame is too short to determine what processes might be behind that trend.
 
