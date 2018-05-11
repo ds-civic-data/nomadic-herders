@@ -14,7 +14,7 @@ zipdata<-read.csv("data/Zip_Coords.csv", header=FALSE, col.names=c("Name", "Zip"
 request_type=c("All", "Short Term Forecast", "Long Term Forecast", "Pasture Info" )
 
 
-min_date <- as.Date("2016-01-01")
+min_date <- as.Date("2016-06-01")
 max_date <- as.Date("2018-01-01")
 
 # Define UI for application that plots 
@@ -34,14 +34,12 @@ ui <- fluidPage(
     
     # Show a plot of the generated distribution
     mainPanel(
-      leafletOutput("map"), 
-      
-      fluidRow(
-        column(4, verbatimTextOutput("range")))
+      leafletOutput("map")
+      )
       
     )
   )
-)
+
 
 ##Server is where all of the computations happen
 server <- function(input, output) {
