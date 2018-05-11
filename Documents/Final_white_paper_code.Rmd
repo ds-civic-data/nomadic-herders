@@ -1,10 +1,10 @@
 ---
-title: "LTS-2 System: Exploratory Analysis of Service Usage Over Time and Space"
+title: "Final_white_paper_code"
 output: github_document
 ---
 
-```{r global_options, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(rex)
 library(readr)
@@ -16,13 +16,13 @@ library(lubridate)
 
 ## Abstract:
 
-The goal of this project was to analyze spatio-temporal usage of Mercycorp Mongolia's LTS-2 SMS information system. We had three areas of focus in our analysis: request patterns of individual users, overall request patterns over time, and request patterns over time. Since the data set we worked with only covers an 18 month period, we are relatively limited in our ability to make conclusions about system usage over time and space. Still, there do appear to be patterns in requests sent into the system which may illustrate more general trends. Requests for information appear to increase in winter months (months cold enough for snow). Additionally, most users request information for only one or two area codes. 
+The goal of this project was to analyze spatio-temporal usage of Mercycorp Mongolia's LTS-2 SMS information system. We had three areas of focus in our analysis: request patterns of individual users, overall request patterns over time, and request patterns over time. Since the data set we worked with only covers an 18 month period, we are relatively limited in our ability to make conclusions about system usage over time and space. Still, there do appear to be patterns in requests sent into the system which may illlustrate more general trends. Requests for information appear to increase in winter months (months cold enough for snow). Additionally, most users request information for only one or two area codes. 
 
 ## The System:
 
 The LTS-2 system is an SMS information service designed to help Mongolian Nomadic herders to improve lives outcomes. The service works by providing weather forecast and pasture information to herders by text message. Anyone with a Mongolian phone number can text into the system, though the information provided is tailored for nomadic herders. In particular, the system aims to reduce livestock deaths due to severe weather, and ensure long-term sustainability of herding by reducing overgrazing. 
 
-The SMS service provides weather and pasture information via text message. One to three, and four day forecasts are available, in addition to pasture information pulled from the Livestock Early Warning system run by Texas A&M University. To receive a text message response, users must request information for a specific _bagh_ (Mongolian sub-district). The data we analyzed is comprised of all the incoming and outgoing texts associated with the LTS-2 system. Incoming texts consist of a _bagh_-level area code and an integer from 1-3 indicating request type. 1 and 2 represent one- to three-day and four- to six-day forecast respectively, while 3 represents a request for pasture information. The format of an incoming text must conform to fairly strict rules for a user to receive a response. The text must contain a 5 digit _bagh_ area code, followed by at least one space, and end with the request code. Any change in formatting, or addition of other information will mean a user does not receive a response. In general, outgoing weather forecasts contain the starting date of the forecast interval, one of four predicted meteorological conditions (sun, clouds, rain, snow). When available, higher resolution forecasts that include high and low temperature are provided. 
+Users can request weather or pasture information via text. One to three, and four day forecasts are available, in addition to pasture information pulled from the Livestock Early Warning system run by Texas A&M University. To receive a text message response, users must request information for a specific _bagh_ (Mongolian subdistrict). The data we analyzed is comprised of all the incoming and outgoing texts associated with the LTS-2 system. Incoming texts consist of a _bagh_-level area code and an integer from 1-3 indicating request type. 1 and 2 represent one- to three-day and four- to six-day forecast respectively, while 3 represents a request for pasture information. The formatting of an incoming text must conform to fairly strict rules for a user to receive a response. The text must begin with a 5 digit bagh area code, followed by at least one space and the request type. Any change in formatting, or addition of other information will mean a user does not receive a response. In general, outgoing weather forecasts contain the starting date of the forecast interval, one of four predicted meteorological conditions (sun, clouds, rain, snow). When available, higher resolution forecasts that include high and low temperature are provided. 
 
 ## The Data:
 
@@ -161,7 +161,7 @@ LTS_yearmonth %>%
 
 __Fig. 2__ This bar plot represents the distribution of the proportion of unique users each month, separated into single-time users (blue) and users who requested information more than one time (red). Note that users counted in the red bar in one month may also be counted in the red bars in subsequent months. 
 
-The graph above shows the monthly proportion of single-time versus multi-time users. Based on this distribution, a significant proportion and consistent proportion of users appear to text into the LTS-2 system and then never request more information. The maximum proportion was in June 2016, at 40% with a minimum of 11% in June 2017. The peak in single-time users around November 2016 (37%) suggests an influx of new, single-time users, and is mirrored in a smaller peak around October/November 2017 (25 and 23% respectively). Any conclusion about seasonal usage is difficult given the newness of the LTS system, though the apparent trend seems to be towards fewer non-repeat users in the summer months (June, July, August, and September).
+The graph above shows the monthly proportion of single-time versus multi-time users. Based on this distrubution, a significant proportion and consistent proportion of users appear to text into the LTS-2 system and then never request more information. The maximum proportion was in June 2016, at 40% with a minimum of 11% in June 2017. The peak in single-time users around November 2016 (37%) suggests an influx of new, single-time users, and is mirrored in a smaller peak around October/November 2017 (25 and 23% respetively). Any conclusion about seasonal usage is difficult given the newness of the LTS system, though the apparent trend seems to be towards fewer non-repeat users in the summer months (June, July, August, and September).
 
 ```{r}
 LTS_yearmonth%>%
@@ -221,7 +221,7 @@ In %>%
 
 __Fig. 4__ The distribution of number of area codes requested by service users. Most users only requested information about a single area code in the course of their use of the system. 
 
-The above bar plot shows the distribution of the number of area codes for which users requested information. Most users only requested information for one area code (around 10,000) in their spans of their . Number of area codes drops off significantly after that, with about 2,500 users requesting 2. It’s difficult to know whether this pattern is at all related to the geographical location of users, because many users only queried the system a single time; however, using the shiny dashboard mapping geographical usage, it’s possible to gain some insight into the  spatial distribution of users. A general examination of the dashboard shows that requests are concentrated in the northern parts of the country. Apart from several southern area codes that receive a significant number of requests, there are almost no southern locations that receive forecast requests.
+The above bar plot shows the distribution of the number of area codes for which users requested information. Most users only requested information for one area code (around 10,000) in their spand of their . Number of area codes drops off significantly after that, with about 2,500 users requesting 2. It’s difficult to know whether this pattern is at all related to the geographical location of users, because many users only queried the system a single time; however, using the shiny dashboard mapping geographical usage, it’s possible to gain some insight into the  spatial distribution of users. A general examination of the dashboard shows that requests are concentrated in the northern parts of the country. Apart from several southern area codes that receive a significant number of requests, there are almost no southern locations that receive forecast requests.
 
 ```{r}
 
@@ -247,7 +247,7 @@ bb %>%
   ggplot(aes(year_month, prop, fill = Messages)) + geom_col() +
   theme(axis.text.x = element_text(angle = 40, hjust = 1)) +
   scale_fill_manual(values=c("tan1", "cadetblue4", "lightcoral")) +
-  ggtitle("Proportion of Incoming Messages that were Invalid") +
+  ggtitle("Proportion of Invalid Incoming Messages") +
   xlab("Year-Month") +
   ylab("Proportion") + 
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank())
@@ -257,17 +257,16 @@ bb %>%
 
 __Fig. 5__ Proportion of incoming messages that were incorrectly formatted and/or contained area codes that do not correspond real area codes. 
 
-The graph above shows the proportions of invalid messages each month, which are caused by incorrectly formatting and/or area codes that do not correspond to actual places. We see an overall decreasing pattern in the total proportion of invalid requests. The monthly proprotion of incoming messages that were incorrectly formatted or contained incorrect information ranged from a maximum of 27% in June of 2016 to a minimum of 13% in July of 2017. The above graph shows that breaking down the invalid messages by type indicates that incorrect formatting was both the most common and most consistent problem in user error. The proportion of messages with incorrect formatting appeared not change much over time, while the use of non-existing area codes in messages tended to decrease.
+The graph above shows the proportions of invalid messages each month, which are caused by incorrectly formatting and/or area codes that do not correspond to actual places. We see an overall decreasing pattern in the total proportion of invalid requests. The proportion of messages with incorrect formatting does not change much over time, while the use of non-existing area codes in messages tends to decrease. Incorrect formatting appears to be the most common and consistent type of user errors. 
 
 Users were creative in their formatting of messages. Incorrect messages involved anything from requests for multiple types of information at a time or multiple area codes at a time, to entire sentences describing the information a user wanted. Given the relatively high proportion of incorrectly formatted messages over time, it may be helpful for the service to respond with formatting instructions to any unreadable messages. Currently, incorrectly formatted messages do not receive a response, so providing a response to incorrectly formatted messages may improve users’ interactions with the system.
 
-__Conclusion__
 
-Analyzing the above visualizations and tables describing the ways individual users queried the system, a number of trends stand out. The first, given a mean 4.63 requests and a median of 2 requests per unique id, is that most users used the system a small number of times. Second, many users only query the system a single time, with monthly proportions of single-time users ranging between 11 and 40% between June 2016 and December 2017. Additionally, we found the majority of users only request information for a single area code. This observation may in part be due to the fact that many users only request information a single time. Finally, we found that incorrectly formatting message is a common user error, and is consistent over time. Focusing attention on improving user understanding of the system may improve peoples' experience with the system.
+Analyzing the previous vizualizations and tables describing the ways individual users queried the system, a number of trends stand out. The first, given a mean 4.63 requests and a median of 2 requests per unique id, is that most users used the system a small number of times. Second, many users only query the system a single time, with monthly proportions of single-time users ranging between 11 and 40% between June 2016 and December 2017. Additionally, we found the majority of users only request information for a single area code. This observation may in part be due to the fact that many users only request information a single time. Finally, we found that incorrectly formatting message is a common user error, and is consistent over time. Focusing attention on improving user understanding of the system may improve peoples' experience with the system.
 
-##General Usage Patterns:
+#General Usage Patterns:
 
-To get a better understanding of the ways users enter and exit the system, and to understand aggregate usage patterns, we focused on temporal usage.
+To get a better understanding of the ways users enter and exit the system, and to understand aggregate usage patterns, we focused at temporal usage.
 
 ```{r}
 # create graph of churn rate
@@ -310,7 +309,7 @@ annotate("text", x = d, y = 0.62, label = c("November"))
 
 ```
 
-__Fig. 6__ Time series plot of the monthly churn rate, which is a measure of turn over in users of a given system.
+__Fig. 6__ Timeseries plot of the monthly churn rate, which is a measure of turn over in users of a given system.
 
 
 Since the dataset covers a relatively short period of time, we calculated monthly churn rates by dividing the number of users who used the system for the last time in a given month by the total number of users that month. The timeplot below shows this churn rate over time. Since we have no data for January 2018, December 2017 was excluded in the analysis. The system’s churn rate was relatively high, indicating that people are constantly entering and exiting the system. 2016 had consistently high churn rates, with a range between 60% and 80% between June and November of 2016, peaking in December at 96%, which was the highest churn rate throughout the year. Relative to 2016, 2017 saw low churn rates, with a range from 28% in July to 59% in October.
@@ -330,7 +329,7 @@ Out %>% mutate(month = month(Date), year = year(Date)) %>%
 
 ```
 
-__Fig. 7__ Bar plot of counts of monthly outgoing messages coded for forecasted meteorological conditions.
+__Fig. 7__ Bar plot of counts of monthly outgoing messages coded for forecasted meteoroligical conditions.
 
 The above plot shows shows the distribution of weather types in outgoing forecasts by month. This graph uses the type weather forecasted - clouds, rain, snow, or sun - as an indicator of Mongolian weather patterns during a given month. While this provides only a rough sense of actual weather patterns, there does appear to noticeable seasonal patterns in types of weather forecasts, with snow forecasted in late fall into winter and early spring, and rain in spring/summer. Usage patterns appear to rise and fall with the appearance of snow, increasing in winter and dipping in summer. June 2016 has relatively high usage, though, is likely an outlier because the system started operation that month. 
   
@@ -360,11 +359,11 @@ bb %>%
 
 __Fig. 8__ Time series plot of the number of new users per month and number of requests per month.
 
-The above time series of number of requests per month overlaid with number of new users per month, shows that new users and requests map fairly well onto each other. Spikes in usage of the system often occur at the same time as new users join the service. This seems to indicate that the existing users request information at a variable rate, as is demonstrated by the peak during March of 2017. This peak in queries is not associated with a spike in new users, further demonstrating the fact that existing users request information at variable rates. In other words, at some times of year existing users, as a whole, queried the system more than at other times of year. Still, the plots seem to map fairly well onto each other. From this we conclude that there may be a trend in usage over time, but the time frame is too short to determine what processes might be behind that trend.
+The above time series of number of requests per month overlaid with number of new users per month, shows that new users and requests map fairly well onto each other. Spikes in usage of the system often occur at the same time as new users join the service. This seems to indicate that the existing users request information at a variable rate, as is demonstated by the peak during March of 2017. This peak in queries is not associated with a spike in new users, further demonstrating the fact that exsisting users request information at variable rates. In other words, at some times of year exsisting users, as a whole, queried the system more than at other times of year. Still, the plots seem to map fairly well onto each other. From this we conclude that there may be a trend in usage over time, but the time frame is too short to determine what processes might be behind that trend.
 
 
-We expected to see a seasonal cycle in the usage of the LTS-2 system due to the seasonal nature of nomadic herding. The LTS-2 system experienced a usage spike during the winter of 2016. However, while there was also an uptick in requests during the winter of 2017, it was of a significantly smaller magnitude. Our plot of requests per month (fig #) and number of users per month (fig #) above shows that usage during the summer months seems fairly consistent, and low from 2016 to 2017. Though it's difficult to discern whether there is a seasonal pattern in usage, there does appear to be a some relationship between snow and number of requests. Our weather analysis relied on the forecast information contained within the LTS outgoing messages, so we were only able look at weather patterns at low-resolution. Snow may be a covariate to cold weather, so future analysis should look at the effects of storms versus cold weather on system usage.
+We expected to see a seasonal cycle in the usage of the LTS-2 system due to the seasonal nature of nomadic herding. The LTS-2 system experienced a usage spike during the winter of 2016. However, while there was also an uptick in requests during the winter of 2017, it was of a significantly smaller magnitude. Our plot of requests per month (fig #) and number of users per month (fig #) above shows that usage during the summer months seems fairly consistent, and low from 2016 to 2017. Though it's difficult to discern whether there is a seasonal pattern in usage, there does appear to be a some relationship between snow and number of requests. Our weather analysis relied on the forecast information contained within the LTS outgoing messages, so we were only able look at weather patterns at low-resolution. Snow may be a proxy for cold weather, so future analysis should look at the effects of storms versus cold weather on system usage.
 
 ## Conclusion:
 
-We analyzed spatial and temporal usage of the LTS-2 system in two areas: individual users, and aggregate usage. Temporal analysis showed a seasonal spike in usage during the winter season (November to February/March). We also found that usage of the system decreased from 2016 to 2017, with the system receiving more requests in the fall and winter of 2016 as compared to the fall and winter of 2017. Though both seasons saw spikes, the spike in 2016 was much higher than in 2017. The system received 8239 requests in December 2016, compared to the peak that occurred late in 2016, which was 2830 requests in October of 2017. Additionally, we found that the locations system users request information for tended to be fairly static. Most users only requested forecasts for one or two area codes. Our most interesting insight comes from examining user behavior. We find that requests for weather forecasts significantly outnumber requests for pasture information, suggesting that system users are more interested in weather information - particularly short-term forecasts - than in information about pasture cover. Users also seem to struggle with properly formatting requests for information. Adding an error message function to the system, in which invalid messages receive a response with instructions for correct formatting, may be a useful feature.
+We analyzed the usage of the spatial and temporal usage of the LTS-2 system and examined user behavior. Temporal analysis shows a seasonal spike in usage during winter time. We also find that usage of the system decreased. The system was queried many more times in the winter of 2016 as compared to the winter of 2017. Additionally, we find that the locations system users are interested in getting information for tended to be fairly static. Most users only requested forecasts for one or two area codes. Our most interesting insight comes from examining user behavior. We find that requests for weather forecasts significantly outnumber requests for pasture information. We also find that many users sent in invalid requests. Adding an error message function to the system, in which invalid messages receive a response with instructions for correct formatting, may be a useful feature.
